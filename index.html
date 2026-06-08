@@ -497,7 +497,7 @@
       </div>
 
       <div class="tab-panel" id="fault-tab">
-        <div class="fault-grid" id="faults">
+        <div class="fault-grid" id="faults-tab-content">
           <div class="control-card">
             <h3>斷層與震源機制互動</h3>
             <label for="faultMode">選擇地殼受力模式</label>
@@ -533,7 +533,7 @@
       </div>
 
       <div class="tab-panel" id="risk-tab">
-        <div class="risk-grid" id="risk">
+        <div class="risk-grid" id="risk-tab-content">
           <div class="control-card">
             <h3>地震風險互動計算器</h3>
             <label for="hazardSlider">地震危害 Hazard：<strong id="hazardVal">6.0</strong></label>
@@ -558,8 +558,86 @@
       </div>
     </section>
 
+
+    <section class="section" id="faults">
+      <div class="section-title"><span>03</span><h2>斷層與沙灘球互動模擬</h2></div>
+
+      <div class="info-card">
+        <h3>斷層運動與震源機制球</h3>
+        <p>
+          這個區塊是從 Hugging Face Gradio 版本轉換成 GitHub Pages 靜態版的互動功能。
+          你可以切換地殼受力模式，觀察正斷層、逆斷層與平移斷層示意圖；也可以拖曳 Strike、Dip、Rake，
+          讓下方沙灘球依照參數即時重新繪製黑白分布。
+        </p>
+      </div>
+
+      <div class="fault-grid">
+        <div class="control-card">
+          <h3>斷層與沙灘球控制面板</h3>
+
+          <label for="faultModePage">選擇地殼受力模式</label>
+          <select id="faultModePage">
+            <option value="normal">拉張力：正斷層</option>
+            <option value="reverse" selected>擠壓力：逆斷層</option>
+            <option value="strike">剪切力：平移斷層</option>
+          </select>
+
+          <label for="strikeSliderPage">走向 Strike (°)：<strong id="strikeValPage">198</strong></label>
+          <input id="strikeSliderPage" type="range" min="0" max="360" step="1" value="198">
+
+          <label for="dipSliderPage">傾角 Dip (°)：<strong id="dipValPage">18</strong></label>
+          <input id="dipSliderPage" type="range" min="0" max="90" step="1" value="18">
+
+          <label for="rakeSliderPage">滑移角 Rake (°)：<strong id="rakeValPage">51</strong></label>
+          <input id="rakeSliderPage" type="range" min="-180" max="180" step="1" value="51">
+
+          <div class="note" style="color:#334155;background:#fff7d6;border-color:#f6d365;">
+            <strong style="color:#7c5a00;">堪察加案例：</strong>
+            NP1 = Strike 198°、Dip 18°、Rake 51°，低傾角且帶逆衝成分，較符合隱沒帶板塊界面。
+          </div>
+        </div>
+
+        <div>
+          <div id="faultOutputPage"></div>
+          <div class="beachball-layout" style="margin-top:1rem;">
+            <div id="beachballSvgPage" class="svg-box"></div>
+            <div id="beachballInfoPage" class="mini-card"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="risk">
+      <div class="section-title"><span>04</span><h2>地震風險互動計算器</h2></div>
+
+      <div class="info-card">
+        <h3>Risk = Hazard × Exposure × Vulnerability</h3>
+        <p>
+          地震風險不只取決於地震規模，也與人口、建物、設施曝險程度以及社會與建築脆弱度有關。
+          你可以拖曳下方三個因子，觀察風險等級與建議如何變化。
+        </p>
+      </div>
+
+      <div class="risk-grid">
+        <div class="control-card">
+          <h3>風險因子控制面板</h3>
+
+          <label for="hazardSliderPage">地震危害 Hazard：<strong id="hazardValPage">6.0</strong></label>
+          <input id="hazardSliderPage" type="range" min="1" max="10" step="0.5" value="6">
+
+          <label for="exposureSliderPage">曝險程度 Exposure：<strong id="exposureValPage">7.0</strong></label>
+          <input id="exposureSliderPage" type="range" min="1" max="10" step="0.5" value="7">
+
+          <label for="vulnerabilitySliderPage">脆弱度 Vulnerability：<strong id="vulnerabilityValPage">6.0</strong></label>
+          <input id="vulnerabilitySliderPage" type="range" min="1" max="10" step="0.5" value="6">
+        </div>
+
+        <div id="riskOutputPage"></div>
+      </div>
+    </section>
+
     <section class="section" id="simulator">
-      <div class="section-title"><span>03</span><h2>即時三軸加速度互動模擬</h2></div>
+      <div class="section-title"><span>05</span><h2>即時三軸加速度互動模擬</h2></div>
 
       <div class="sim-grid">
         <div class="panel glass">
@@ -639,7 +717,7 @@
     </section>
 
     <section class="section" id="problem">
-      <div class="section-title"><span>04</span><h2>核心問題與警報門檻說明</h2></div>
+      <div class="section-title"><span>06</span><h2>核心問題與警報門檻說明</h2></div>
 
       <div class="problem-grid">
         <div class="glass problem-card">
@@ -1039,6 +1117,137 @@
 
     [hazardSlider, exposureSlider, vulnerabilitySlider].forEach(el => el.addEventListener("input", renderRisk));
     renderRisk();
+
+
+    // =========================
+    // Standalone fault + beachball section
+    // =========================
+    const faultModePage = document.getElementById("faultModePage");
+    const strikeSliderPage = document.getElementById("strikeSliderPage");
+    const dipSliderPage = document.getElementById("dipSliderPage");
+    const rakeSliderPage = document.getElementById("rakeSliderPage");
+
+    function makeBeachballSvgPage(strike, dip, rake) {
+      const m = momentTensorNED(strike, dip, rake);
+      const cx = 210, cy = 210, radius = 145;
+      const step = 7;
+      let cells = "";
+
+      for (let y = -radius; y <= radius; y += step) {
+        for (let x = -radius; x <= radius; x += step) {
+          const rho = Math.sqrt(x * x + y * y) / radius;
+          if (rho > 1) continue;
+
+          const az = Math.atan2(x, -y);
+          const takeoff = 2 * Math.asin(Math.min(1, rho / Math.sqrt(2)));
+          const n = Math.sin(takeoff) * Math.cos(az);
+          const e = Math.sin(takeoff) * Math.sin(az);
+          const down = Math.cos(takeoff);
+          const val = radiationValue(m, n, e, down);
+          const fill = val >= 0 ? "rgba(0,0,0,0.92)" : "white";
+          cells += `<rect x="${cx + x - step/2}" y="${cy + y - step/2}" width="${step+0.6}" height="${step+0.6}" fill="${fill}" />`;
+        }
+      }
+
+      const [type, color, note] = faultTypeFromRake(rake);
+      document.getElementById("beachballInfoPage").innerHTML = `
+        <h3 style="color:${color} !important;">${type}</h3>
+        <p>${note}</p>
+        <p>
+          <strong>Strike：</strong>${strike.toFixed(0)}°<br>
+          <strong>Dip：</strong>${dip.toFixed(0)}°<br>
+          <strong>Rake：</strong>${rake.toFixed(0)}°
+        </p>
+        <div class="note">
+          <strong>說明：</strong>這個 GitHub 版使用 JavaScript 依 Strike / Dip / Rake 建立雙偶力矩張量，
+          並在下半球投影上重新繪製黑白分布，因此拖曳參數時沙灘球會即時改變。
+        </div>
+      `;
+
+      return `
+        <svg viewBox="0 0 420 420" width="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs><clipPath id="ballClipPage"><circle cx="${cx}" cy="${cy}" r="${radius}" /></clipPath></defs>
+          <rect x="0" y="0" width="420" height="420" rx="24" fill="rgba(5,10,18,0.86)" />
+          <g clip-path="url(#ballClipPage)">${cells}</g>
+          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="rgba(244,248,255,0.95)" stroke-width="4" />
+          <text x="36" y="36" fill="rgba(244,248,255,0.90)" font-size="17">Strike ${strike.toFixed(0)}°</text>
+          <text x="36" y="62" fill="rgba(244,248,255,0.90)" font-size="17">Dip ${dip.toFixed(0)}°</text>
+          <text x="36" y="88" fill="rgba(244,248,255,0.90)" font-size="17">Rake ${rake.toFixed(0)}°</text>
+        </svg>
+      `;
+    }
+
+    function renderStandaloneFault() {
+      if (!faultModePage) return;
+      document.getElementById("faultOutputPage").innerHTML = makeFaultSvg(faultModePage.value);
+    }
+
+    function renderBeachballPage() {
+      if (!strikeSliderPage) return;
+      const strike = Number(strikeSliderPage.value);
+      const dip = Number(dipSliderPage.value);
+      const rake = Number(rakeSliderPage.value);
+
+      document.getElementById("strikeValPage").textContent = strike.toFixed(0);
+      document.getElementById("dipValPage").textContent = dip.toFixed(0);
+      document.getElementById("rakeValPage").textContent = rake.toFixed(0);
+      document.getElementById("beachballSvgPage").innerHTML = makeBeachballSvgPage(strike, dip, rake);
+    }
+
+    if (faultModePage) {
+      faultModePage.addEventListener("change", renderStandaloneFault);
+      [strikeSliderPage, dipSliderPage, rakeSliderPage].forEach(el => el.addEventListener("input", renderBeachballPage));
+      renderStandaloneFault();
+      renderBeachballPage();
+    }
+
+    // =========================
+    // Standalone risk section
+    // =========================
+    const hazardSliderPage = document.getElementById("hazardSliderPage");
+    const exposureSliderPage = document.getElementById("exposureSliderPage");
+    const vulnerabilitySliderPage = document.getElementById("vulnerabilitySliderPage");
+
+    function renderRiskPage() {
+      if (!hazardSliderPage) return;
+
+      const hazard = Number(hazardSliderPage.value);
+      const exposure = Number(exposureSliderPage.value);
+      const vulnerability = Number(vulnerabilitySliderPage.value);
+      const risk = hazard * exposure * vulnerability;
+
+      let level, color, advice;
+      if (risk < 20) {
+        level = "低風險"; color = "#74ffba"; advice = "目前整體風險較低，但仍需維持基本防災準備與定期檢查。";
+      } else if (risk < 80) {
+        level = "中風險"; color = "#ffe28a"; advice = "已有明顯風險，建議強化避難規劃、家具固定與建築安全檢查。";
+      } else if (risk < 180) {
+        level = "高風險"; color = "#ffba7a"; advice = "風險偏高，應優先檢查老舊建物、軟弱層與重要設施耐震能力。";
+      } else {
+        level = "極高風險"; color = "#ff8fa0"; advice = "風險非常高，需進行建築補強、土地使用檢討與防災教育整備。";
+      }
+
+      document.getElementById("hazardValPage").textContent = hazard.toFixed(1);
+      document.getElementById("exposureValPage").textContent = exposure.toFixed(1);
+      document.getElementById("vulnerabilityValPage").textContent = vulnerability.toFixed(1);
+
+      document.getElementById("riskOutputPage").innerHTML = `
+        <div class="panel output-panel">
+          <div class="level-badge" style="color:${color}; border-color:${color}; background:rgba(255,255,255,0.08);">${level}</div>
+          <div class="risk-number">${risk.toFixed(1)}</div>
+          <div class="measure-label">Risk = Hazard × Exposure × Vulnerability</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(risk / 250 * 100, 100).toFixed(1)}%;"></div></div>
+          <p class="measure-label">Hazard = ${hazard.toFixed(1)} ｜ Exposure = ${exposure.toFixed(1)} ｜ Vulnerability = ${vulnerability.toFixed(1)}</p>
+          <div class="note"><strong>建議：</strong>${advice}</div>
+        </div>
+      `;
+    }
+
+    if (hazardSliderPage) {
+      [hazardSliderPage, exposureSliderPage, vulnerabilitySliderPage].forEach(el => el.addEventListener("input", renderRiskPage));
+      renderRiskPage();
+    }
+
 
     // =========================
     // Seismometer simulator
