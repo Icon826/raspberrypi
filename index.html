@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- 單檔版：CSS 與 JavaScript 已內嵌，可直接上傳 GitHub Pages 或 Hugging Face Static Space。 -->
+<!-- 單檔版：CSS 與 JavaScript 已內嵌，可直接用瀏覽器開啟。 -->
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>微型地震預警與環境監測系統｜互動式網頁</title>
-  <meta name="description" content="Raspberry Pi + MPU6050 微型地震儀互動式展示網頁，可部署至 GitHub Pages 與 Hugging Face Static Spaces。" />
+  <title>微型地震預警與環境監測系統｜互動式網頁修改版</title>
+  <meta name="description" content="Raspberry Pi + MPU6050 微型地震儀互動式展示網頁。" />
   <style>
 * {
   box-sizing: border-box;
@@ -815,7 +815,6 @@ body.level-3 .led {
       <a href="#overview">系統概念</a>
       <a href="#simulator">即時模擬</a>
       <a href="#problem">核心問題</a>
-      <a href="#deploy">部署教學</a>
     </nav>
   </header>
 
@@ -1049,44 +1048,16 @@ body.level-3 .led {
           <strong>預設門檻：2.0g</strong>
         </article>
       </div>
-    </section>
-
-    <section class="section" id="deploy">
-      <div class="section-title">
-        <span>05</span>
-        <h2>部署到 GitHub Pages 與 Hugging Face</h2>
-      </div>
-
-      <div class="deploy-grid">
-        <div class="glass deploy-card">
-          <h3>GitHub Pages</h3>
-          <ol>
-            <li>建立一個新的 GitHub Repository。</li>
-            <li>上傳 <code>index.html</code>、<code>style.css</code>、<code>script.js</code>、<code>README.md</code>。</li>
-            <li>進入 <strong>Settings → Pages</strong>。</li>
-            <li>Source 選擇 <strong>Deploy from a branch</strong>。</li>
-            <li>Branch 選擇 <strong>main / root</strong> 後儲存。</li>
-            <li>等待網址生成，即可公開展示。</li>
-          </ol>
-        </div>
-
-        <div class="glass deploy-card">
-          <h3>Hugging Face Static Space</h3>
-          <ol>
-            <li>到 Hugging Face 建立新的 Space。</li>
-            <li>SDK 選擇 <strong>Static</strong>。</li>
-            <li>上傳本資料夾內所有檔案。</li>
-            <li>確認 README.md 最上方 YAML 有 <code>sdk: static</code>。</li>
-            <li>等待 Space build 完成即可。</li>
-          </ol>
-        </div>
-      </div>
 
       <div class="note">
-        <strong>注意：</strong>這個網頁是互動展示版，不會直接連接 Raspberry Pi 的 GPIO 或 MPU6050。
-        真正的硬體監測仍需要在 Raspberry Pi 上執行 Python 程式；網頁負責展示邏輯、模擬數值與輔助報告說明。
+        <strong>門檻設定說明：</strong>
+        一開始警報門檻原本設定為 1.5g、2.0g、2.5g，但實際操作簡易地震儀時，
+        若要達到這些數值，需要把裝置晃動得非常劇烈，容易造成杜邦線鬆脫、
+        麵包板接觸不良，甚至讓電路瞬間斷線。為了讓裝置能穩定展示警報效果，
+        最後改為 1.0g、1.5g、2.0g，分別作為一級、二級與三級警報門檻。
       </div>
     </section>
+
   </main>
 
   <footer>
