@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<!-- 單檔版：CSS 與 JavaScript 已內嵌，可直接上傳 GitHub Pages 或 Hugging Face Static Space。 -->
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>微型地震預警與環境監測系統｜互動式網頁</title>
+  <meta name="description" content="Raspberry Pi + MPU6050 微型地震儀互動式展示網頁，可部署至 GitHub Pages 與 Hugging Face Static Spaces。" />
+  <style>
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #08111f;
+  --bg2: #0e1d32;
+  --card: rgba(255, 255, 255, 0.08);
+  --card2: rgba(255, 255, 255, 0.12);
+  --text: #eaf2ff;
+  --muted: #a8b7cb;
+  --line: rgba(255, 255, 255, 0.18);
+  --green: #48e39b;
+  --cyan: #58d4ff;
+  --yellow: #ffd45c;
+  --orange: #ff9b52;
+  --red: #ff5c70;
+  --purple: #b99cff;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(88, 212, 255, 0.18), transparent 36rem),
+    radial-gradient(circle at 85% 8%, rgba(255, 92, 112, 0.14), transparent 28rem),
+    linear-gradient(135deg, var(--bg), var(--bg2));
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.bg-orb {
+  position: fixed;
+  border-radius: 999px;
+  filter: blur(50px);
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.orb-1 {
+  width: 22rem;
+  height: 22rem;
+  background: var(--cyan);
+  left: -7rem;
+  top: 12rem;
+}
+
+.orb-2 {
+  width: 18rem;
+  height: 18rem;
+  background: var(--red);
+  right: -5rem;
+  top: 28rem;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(18px);
+  background: rgba(8, 17, 31, 0.78);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem min(5vw, 4rem);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.brand-icon {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(255, 92, 112, 0.95), rgba(255, 155, 82, 0.95));
+  box-shadow: 0 10px 28px rgba(255, 92, 112, 0.25);
+  font-size: 1.5rem;
+}
+
+.brand h1 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.brand p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.nav a:hover {
+  color: var(--text);
+}
+
+main {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 2rem;
+  align-items: center;
+  min-height: 78vh;
+  padding: 4rem 0 3rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  color: var(--cyan);
+  background: rgba(88, 212, 255, 0.1);
+  border: 1px solid rgba(88, 212, 255, 0.3);
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.hero h2 {
+  font-size: clamp(2.3rem, 5vw, 4.8rem);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+  margin: 0 0 1.2rem;
+}
+
+.hero p {
+  color: var(--muted);
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.9rem;
+  margin-top: 1.6rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.2rem;
+  font-weight: 700;
+}
+
+.primary {
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+  color: #07101d;
+}
+
+.ghost {
+  color: var(--text);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.glass, .card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.hero-card {
+  padding: 1.2rem;
+}
+
+.mini-terminal {
+  background: #050a12;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 1.1rem;
+  overflow: hidden;
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terminal-dots span {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: #ff5c70;
+}
+
+.terminal-dots span:nth-child(2) {
+  background: #ffd45c;
+}
+
+.terminal-dots span:nth-child(3) {
+  background: #48e39b;
+}
+
+pre {
+  margin: 0;
+  padding: 1.2rem;
+  white-space: pre-wrap;
+  color: #c8ffe4;
+  line-height: 1.7;
+  min-height: 12rem;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.status-grid div {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.status-grid span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.status-grid strong {
+  display: block;
+  font-size: 1.25rem;
+  margin-top: 0.35rem;
+}
+
+.section {
+  padding: 4.5rem 0;
+}
+
+.section-title {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.4rem;
+}
+
+.section-title span {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.85rem;
+  background: rgba(88, 212, 255, 0.13);
+  border: 1px solid rgba(88, 212, 255, 0.35);
+  color: var(--cyan);
+  font-weight: 900;
+}
+
+.section-title h2 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  margin: 0;
+}
+
+.cards {
+  display: grid;
+  gap: 1rem;
+}
+
+.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.card {
+  padding: 1.3rem;
+}
+
+.card-icon {
+  font-size: 2rem;
+  margin-bottom: 0.8rem;
+}
+
+.card h3 {
+  margin: 0 0 0.6rem;
+}
+
+.card p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+code {
+  background: rgba(255, 255, 255, 0.1);
+  color: #c7f7ff;
+  padding: 0.16rem 0.35rem;
+  border-radius: 0.35rem;
+  font-size: 0.9em;
+}
+
+.flow {
+  margin-top: 1rem;
+  padding: 1.2rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.flow-step {
+  min-height: 6rem;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.flow-step small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.flow-arrow {
+  color: var(--cyan);
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.sim-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 1rem;
+}
+
+.panel {
+  padding: 1.4rem;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.panel-head h3 {
+  margin: 0;
+}
+
+.panel-head span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.small-btn {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.55rem 0.8rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.small-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.slider-row {
+  margin-bottom: 1.1rem;
+}
+
+.slider-row label, .thresholds label {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--cyan);
+}
+
+.axis-x input { accent-color: var(--red); }
+.axis-y input { accent-color: var(--yellow); }
+.axis-z input { accent-color: var(--cyan); }
+
+.toggle-box {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  margin: 1rem 0;
+}
+
+.toggle-box p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.switch {
+  position: relative;
+  width: 3.2rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+}
+
+.switch input {
+  display: none;
+}
+
+.switch-ui {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+}
+
+.switch-ui::after {
+  content: "";
+  position: absolute;
+  top: 0.22rem;
+  left: 0.22rem;
+  width: 1.32rem;
+  height: 1.32rem;
+  background: white;
+  border-radius: 50%;
+  transition: 0.25s;
+}
+
+.switch input:checked + .switch-ui {
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+}
+
+.switch input:checked + .switch-ui::after {
+  transform: translateX(1.45rem);
+}
+
+.thresholds {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.thresholds h4 {
+  margin: 0 0 1rem;
+}
+
+.output-panel {
+  text-align: center;
+}
+
+.level-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 10rem;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  background: rgba(72, 227, 155, 0.13);
+  border: 1px solid rgba(72, 227, 155, 0.38);
+  color: var(--green);
+  font-weight: 900;
+}
+
+.big-number {
+  margin: 1.1rem 0 0.25rem;
+  font-size: clamp(4rem, 10vw, 7rem);
+  font-weight: 950;
+  letter-spacing: -0.08em;
+}
+
+.big-number small {
+  font-size: 1.3rem;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.measure-label {
+  color: var(--muted);
+  margin: 0 0 1.2rem;
+}
+
+.bar-wrap {
+  height: 1rem;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.device-preview {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 1rem;
+  margin: 1.2rem 0;
+}
+
+.led {
+  min-height: 9rem;
+  border-radius: 1.2rem;
+  background: radial-gradient(circle, rgba(72, 227, 155, 0.12), rgba(255,255,255,0.04));
+  border: 1px solid var(--line);
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.led::after {
+  content: "LED";
+  position: absolute;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.buzzer {
+  min-height: 9rem;
+  border-radius: 1.2rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.buzzer span {
+  font-size: 2.6rem;
+}
+
+.buzzer strong {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.alert-text {
+  color: var(--muted);
+  line-height: 1.7;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.wave-panel {
+  margin-top: 1rem;
+  padding: 1.2rem;
+}
+
+canvas {
+  width: 100%;
+  max-width: 100%;
+  background: rgba(5, 10, 18, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
+  color: var(--muted);
+}
+
+.legend span::before {
+  content: "";
+  width: 0.8rem;
+  height: 0.8rem;
+  display: inline-block;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.legend-x::before { background: var(--red); }
+.legend-y::before { background: var(--yellow); }
+.legend-z::before { background: var(--cyan); }
+.legend-t::before { background: var(--purple); }
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.problem-card {
+  padding: 1.4rem;
+}
+
+.problem-card p {
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.formula {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(88, 212, 255, 0.1);
+  border: 1px solid rgba(88, 212, 255, 0.25);
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #c7f7ff;
+}
+
+.check-list {
+  padding: 0;
+  list-style: none;
+}
+
+.check-list li {
+  margin: 0.7rem 0;
+  color: var(--muted);
+}
+
+.check-list li::before {
+  content: "✓";
+  color: var(--green);
+  font-weight: 900;
+  margin-right: 0.5rem;
+}
+
+.level-one { border-color: rgba(255, 212, 92, 0.38); }
+.level-two { border-color: rgba(255, 155, 82, 0.38); }
+.level-three { border-color: rgba(255, 92, 112, 0.42); }
+
+.deploy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.deploy-card {
+  padding: 1.4rem;
+}
+
+.deploy-card li {
+  color: var(--muted);
+  line-height: 1.85;
+  margin: 0.35rem 0;
+}
+
+.note {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  color: var(--muted);
+  background: rgba(255, 212, 92, 0.1);
+  border: 1px solid rgba(255, 212, 92, 0.28);
+  line-height: 1.7;
+}
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding: 2rem 1rem;
+  margin-top: 2rem;
+}
+
+body.level-1 .level-badge {
+  color: var(--yellow);
+  background: rgba(255, 212, 92, 0.13);
+  border-color: rgba(255, 212, 92, 0.38);
+}
+
+body.level-2 .level-badge {
+  color: var(--orange);
+  background: rgba(255, 155, 82, 0.13);
+  border-color: rgba(255, 155, 82, 0.38);
+}
+
+body.level-3 .level-badge {
+  color: var(--red);
+  background: rgba(255, 92, 112, 0.13);
+  border-color: rgba(255, 92, 112, 0.38);
+}
+
+body.level-1 .led {
+  animation: breathe 1.6s infinite ease-in-out;
+}
+
+body.level-2 .led {
+  animation: blink 0.8s infinite steps(2);
+}
+
+body.level-3 .led {
+  animation: blink 0.28s infinite steps(2);
+}
+
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 212, 92, 0.3); background: rgba(255, 212, 92, 0.08); }
+  50% { box-shadow: 0 0 38px rgba(255, 212, 92, 0.85); background: rgba(255, 212, 92, 0.3); }
+}
+
+@keyframes blink {
+  0%, 49% { box-shadow: 0 0 40px rgba(255, 92, 112, 0.8); background: rgba(255, 92, 112, 0.32); }
+  50%, 100% { box-shadow: none; background: rgba(255, 255, 255, 0.04); }
+}
+
+@media (max-width: 900px) {
+  .topbar, .hero, .sim-grid, .problem-grid, .deploy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .nav {
+    justify-content: flex-start;
+  }
+
+  .three {
+    grid-template-columns: 1fr;
+  }
+
+  .flow {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+
+  .hero {
+    min-height: auto;
+    padding-top: 2rem;
+  }
+}
+
+@media (max-width: 540px) {
+  main {
+    width: min(100% - 1rem, 1180px);
+  }
+
+  .status-grid, .device-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h2 {
+    font-size: 2.15rem;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">🌋</div>
+      <div>
+        <h1>微型地震預警與環境監測系統</h1>
+        <p>Raspberry Pi × MPU6050 × LED / Buzzer × Discord Webhook</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#overview">系統概念</a>
+      <a href="#simulator">即時模擬</a>
+      <a href="#problem">核心問題</a>
+      <a href="#deploy">部署教學</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="overview">
+      <div class="hero-text">
+        <div class="eyebrow">成果發表互動版</div>
+        <h2>把 Python 地震警報程式，變成可以展示、操作、解釋的網頁。</h2>
+        <p>
+          這個網頁整理原始程式的功能邏輯：讀取 MPU6050 三軸加速度、計算合成加速度、
+          依照三級門檻觸發 LED、蜂鳴器與 Discord 警報，並用互動模擬說明
+          「為什麼靜止時也可能接近 1g」這個關鍵問題。
+        </p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#simulator">開始互動模擬</a>
+          <a class="btn ghost" href="#architecture">查看程式架構</a>
+        </div>
+      </div>
+
+      <div class="hero-card glass">
+        <div class="mini-terminal">
+          <div class="terminal-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <pre id="terminalText">[系統] ✅ MPU6050 硬體初始化成功。
+正在即時採樣中...
+[░░░░░░░░░░░░░░░░░░░░] 即時震度: 0.00g (L0)</pre>
+        </div>
+        <div class="status-grid">
+          <div>
+            <span>目前等級</span>
+            <strong id="heroLevel">L0</strong>
+          </div>
+          <div>
+            <span>合成加速度</span>
+            <strong id="heroAccel">0.00 g</strong>
+          </div>
+          <div>
+            <span>最高 PGA</span>
+            <strong id="heroPga">0.00 g</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="architecture">
+      <div class="section-title">
+        <span>01</span>
+        <h2>原始程式在做什麼？</h2>
+      </div>
+
+      <div class="cards three">
+        <article class="card">
+          <div class="card-icon">📡</div>
+          <h3>讀取三軸加速度</h3>
+          <p>透過 I2C 讀取 MPU6050 的 X、Y、Z 三軸原始資料，並換算成 g 值。</p>
+          <code>acc_x, acc_y, acc_z</code>
+        </article>
+        <article class="card">
+          <div class="card-icon">🧮</div>
+          <h3>計算合成加速度</h3>
+          <p>把三個方向合成為空間向量大小，用來代表當下震動強度。</p>
+          <code>√(x² + y² + z²)</code>
+        </article>
+        <article class="card">
+          <div class="card-icon">🚨</div>
+          <h3>觸發三級警報</h3>
+          <p>依據 L1、L2、L3 門檻控制 LED、蜂鳴器與 Discord 推播。</p>
+          <code>L1 ≥ 1.0g｜L2 ≥ 1.5g｜L3 ≥ 2.0g</code>
+        </article>
+      </div>
+
+      <div class="flow glass">
+        <div class="flow-step">MPU6050<br><small>三軸感測</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Python<br><small>讀取與換算</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">合成加速度<br><small>PGA 紀錄</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">門檻判斷<br><small>L1 / L2 / L3</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">警報輸出<br><small>LED / Buzzer / Discord</small></div>
+      </div>
+    </section>
+
+    <section class="section" id="simulator">
+      <div class="section-title">
+        <span>02</span>
+        <h2>即時三軸加速度互動模擬</h2>
+      </div>
+
+      <div class="sim-grid">
+        <div class="panel glass">
+          <div class="panel-head">
+            <h3>三軸輸入</h3>
+            <button class="small-btn" id="randomShake">產生一次晃動</button>
+          </div>
+
+          <div class="slider-row axis-x">
+            <label for="xAxis">X 軸：<strong id="xVal">0.00</strong> g</label>
+            <input id="xAxis" type="range" min="-3" max="3" step="0.01" value="0" />
+          </div>
+          <div class="slider-row axis-y">
+            <label for="yAxis">Y 軸：<strong id="yVal">0.00</strong> g</label>
+            <input id="yAxis" type="range" min="-3" max="3" step="0.01" value="0" />
+          </div>
+          <div class="slider-row axis-z">
+            <label for="zAxis">Z 軸：<strong id="zVal">1.00</strong> g</label>
+            <input id="zAxis" type="range" min="-3" max="3" step="0.01" value="1" />
+          </div>
+
+          <div class="toggle-box">
+            <label class="switch">
+              <input type="checkbox" id="gravityCorrection" />
+              <span class="switch-ui"></span>
+            </label>
+            <div>
+              <strong>啟用簡易重力校正</strong>
+              <p>展示用：以 |合成加速度 − 1g| 近似動態震動量。</p>
+            </div>
+          </div>
+
+          <div class="thresholds">
+            <h4>警報門檻設定</h4>
+            <label>L1：<strong id="l1Val">1.00</strong> g</label>
+            <input id="l1" type="range" min="0.1" max="3" step="0.05" value="1" />
+            <label>L2：<strong id="l2Val">1.50</strong> g</label>
+            <input id="l2" type="range" min="0.1" max="3" step="0.05" value="1.5" />
+            <label>L3：<strong id="l3Val">2.00</strong> g</label>
+            <input id="l3" type="range" min="0.1" max="3.5" step="0.05" value="2" />
+          </div>
+        </div>
+
+        <div class="panel glass output-panel">
+          <div class="level-badge" id="levelBadge">L0 安全</div>
+          <div class="big-number">
+            <span id="mainAccel">1.00</span>
+            <small>g</small>
+          </div>
+          <p class="measure-label" id="measureLabel">目前使用：原始合成加速度</p>
+
+          <div class="bar-wrap">
+            <div class="bar-fill" id="energyBar"></div>
+          </div>
+
+          <div class="device-preview">
+            <div class="led" id="ledLight"></div>
+            <div class="buzzer" id="buzzerBox">
+              <span>🔇</span>
+              <strong id="buzzerText">蜂鳴器關閉</strong>
+            </div>
+          </div>
+
+          <div class="alert-text" id="alertText">
+            目前未達警報門檻。拖曳三軸滑桿觀察警報如何變化。
+          </div>
+        </div>
+      </div>
+
+      <div class="wave-panel glass">
+        <div class="panel-head">
+          <h3>模擬波形圖</h3>
+          <span>畫面每 0.2 秒更新一次</span>
+        </div>
+        <canvas id="waveCanvas" width="1200" height="320" aria-label="waveform chart"></canvas>
+        <div class="legend">
+          <span class="legend-x">X</span>
+          <span class="legend-y">Y</span>
+          <span class="legend-z">Z</span>
+          <span class="legend-t">合成/校正值</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="problem">
+      <div class="section-title">
+        <span>03</span>
+        <h2>這份程式最重要的核心問題</h2>
+      </div>
+
+      <div class="problem-grid">
+        <div class="glass problem-card">
+          <h3>靜止時也可能接近 1g</h3>
+          <p>
+            原始程式使用 <code>sqrt(x² + y² + z²)</code> 計算三軸合成加速度。
+            但 MPU6050 會量到地球重力，所以感測器靜止時，通常 Z 軸就接近 1g。
+          </p>
+          <div class="formula">√(0² + 0² + 1²) = 1g</div>
+          <p>
+            如果 L1 門檻剛好設定為 1.0g，就可能在沒有明顯晃動時觸發一級警報。
+          </p>
+        </div>
+
+        <div class="glass problem-card">
+          <h3>展示版 vs 嚴謹偵測版</h3>
+          <p>
+            目前程式很適合成果展示：LED、蜂鳴器、Discord、終端機進度條都很完整。
+            但若要做成較嚴謹的地震儀，需要把「姿態造成的重力投影」和「真實震動」分開。
+          </p>
+          <ul class="check-list">
+            <li>加入靜態校正與零點偏移修正</li>
+            <li>扣除重力或使用高通濾波</li>
+            <li>加入低通濾波降低雜訊</li>
+            <li>使用 STA/LTA 參與事件判斷</li>
+            <li>判定主震動方向，而不只看合成值</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span>04</span>
+        <h2>警報等級與硬體反應</h2>
+      </div>
+
+      <div class="cards three level-cards">
+        <article class="card level-one">
+          <h3>🟡 L1 輕微有感</h3>
+          <p>呼吸燈效果、低頻提示音，適合提醒「有震動，但不一定是事件」。</p>
+          <strong>預設門檻：1.0g</strong>
+        </article>
+        <article class="card level-two">
+          <h3>🟠 L2 中度有感</h3>
+          <p>中速閃爍、雙音頻交替，代表震動已明顯超過基準。</p>
+          <strong>預設門檻：1.5g</strong>
+        </article>
+        <article class="card level-three">
+          <h3>🔴 L3 強烈有感</h3>
+          <p>快速爆閃、高頻警報音，並可透過 Discord 發布事件訊息。</p>
+          <strong>預設門檻：2.0g</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="deploy">
+      <div class="section-title">
+        <span>05</span>
+        <h2>部署到 GitHub Pages 與 Hugging Face</h2>
+      </div>
+
+      <div class="deploy-grid">
+        <div class="glass deploy-card">
+          <h3>GitHub Pages</h3>
+          <ol>
+            <li>建立一個新的 GitHub Repository。</li>
+            <li>上傳 <code>index.html</code>、<code>style.css</code>、<code>script.js</code>、<code>README.md</code>。</li>
+            <li>進入 <strong>Settings → Pages</strong>。</li>
+            <li>Source 選擇 <strong>Deploy from a branch</strong>。</li>
+            <li>Branch 選擇 <strong>main / root</strong> 後儲存。</li>
+            <li>等待網址生成，即可公開展示。</li>
+          </ol>
+        </div>
+
+        <div class="glass deploy-card">
+          <h3>Hugging Face Static Space</h3>
+          <ol>
+            <li>到 Hugging Face 建立新的 Space。</li>
+            <li>SDK 選擇 <strong>Static</strong>。</li>
+            <li>上傳本資料夾內所有檔案。</li>
+            <li>確認 README.md 最上方 YAML 有 <code>sdk: static</code>。</li>
+            <li>等待 Space build 完成即可。</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>注意：</strong>這個網頁是互動展示版，不會直接連接 Raspberry Pi 的 GPIO 或 MPU6050。
+        真正的硬體監測仍需要在 Raspberry Pi 上執行 Python 程式；網頁負責展示邏輯、模擬數值與輔助報告說明。
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Made for 微型地震預警與環境監測系統｜Static Web Demo</p>
+  </footer>
+
+  <script>
+const els = {
+  x: document.querySelector("#xAxis"),
+  y: document.querySelector("#yAxis"),
+  z: document.querySelector("#zAxis"),
+  xVal: document.querySelector("#xVal"),
+  yVal: document.querySelector("#yVal"),
+  zVal: document.querySelector("#zVal"),
+  l1: document.querySelector("#l1"),
+  l2: document.querySelector("#l2"),
+  l3: document.querySelector("#l3"),
+  l1Val: document.querySelector("#l1Val"),
+  l2Val: document.querySelector("#l2Val"),
+  l3Val: document.querySelector("#l3Val"),
+  gravityCorrection: document.querySelector("#gravityCorrection"),
+  randomShake: document.querySelector("#randomShake"),
+  levelBadge: document.querySelector("#levelBadge"),
+  mainAccel: document.querySelector("#mainAccel"),
+  measureLabel: document.querySelector("#measureLabel"),
+  energyBar: document.querySelector("#energyBar"),
+  ledLight: document.querySelector("#ledLight"),
+  buzzerText: document.querySelector("#buzzerText"),
+  buzzerBox: document.querySelector("#buzzerBox"),
+  alertText: document.querySelector("#alertText"),
+  terminalText: document.querySelector("#terminalText"),
+  heroLevel: document.querySelector("#heroLevel"),
+  heroAccel: document.querySelector("#heroAccel"),
+  heroPga: document.querySelector("#heroPga"),
+  canvas: document.querySelector("#waveCanvas"),
+};
+
+let maxPga = 0;
+let tick = 0;
+const wave = {
+  x: Array(120).fill(0),
+  y: Array(120).fill(0),
+  z: Array(120).fill(1),
+  t: Array(120).fill(1)
+};
+
+function clampThresholds() {
+  let l1 = Number(els.l1.value);
+  let l2 = Number(els.l2.value);
+  let l3 = Number(els.l3.value);
+
+  if (l2 < l1 + 0.05) {
+    l2 = l1 + 0.05;
+    els.l2.value = l2.toFixed(2);
+  }
+
+  if (l3 < l2 + 0.05) {
+    l3 = l2 + 0.05;
+    els.l3.value = l3.toFixed(2);
+  }
+
+  return { l1, l2, l3 };
+}
+
+function getState() {
+  const x = Number(els.x.value);
+  const y = Number(els.y.value);
+  const z = Number(els.z.value);
+  const raw = Math.sqrt(x * x + y * y + z * z);
+  const corrected = Math.abs(raw - 1);
+  const useCorrected = els.gravityCorrection.checked;
+  const measured = useCorrected ? corrected : raw;
+  const thresholds = clampThresholds();
+
+  let level = 0;
+  let title = "L0 安全";
+  let message = "目前未達警報門檻。拖曳三軸滑桿觀察警報如何變化。";
+  let buzzer = "蜂鳴器關閉";
+  let icon = "🔇";
+
+  if (measured >= thresholds.l3) {
+    level = 3;
+    title = "L3 強烈有感";
+    message = "🔴 三級警報：快速爆閃、高頻警報，Discord 可發布事件訊息。";
+    buzzer = "高頻空襲警報式";
+    icon = "🚨";
+  } else if (measured >= thresholds.l2) {
+    level = 2;
+    title = "L2 中度有感";
+    message = "🟠 二級警報：中速閃爍，蜂鳴器雙音頻交替。";
+    buzzer = "雙音頻交替";
+    icon = "📣";
+  } else if (measured >= thresholds.l1) {
+    level = 1;
+    title = "L1 輕微有感";
+    message = "🟡 一級警報：呼吸燈與低頻提示音。注意：若未校正，靜止時的 1g 重力也可能觸發。";
+    buzzer = "低頻提示音";
+    icon = "🔔";
+  }
+
+  return { x, y, z, raw, corrected, measured, useCorrected, level, title, message, buzzer, icon, thresholds };
+}
+
+function render() {
+  const s = getState();
+  maxPga = Math.max(maxPga, s.measured);
+
+  els.xVal.textContent = s.x.toFixed(2);
+  els.yVal.textContent = s.y.toFixed(2);
+  els.zVal.textContent = s.z.toFixed(2);
+  els.l1Val.textContent = Number(els.l1.value).toFixed(2);
+  els.l2Val.textContent = Number(els.l2.value).toFixed(2);
+  els.l3Val.textContent = Number(els.l3.value).toFixed(2);
+
+  els.levelBadge.textContent = s.title;
+  els.mainAccel.textContent = s.measured.toFixed(2);
+  els.measureLabel.textContent = s.useCorrected ? "目前使用：簡易重力校正後震動量" : "目前使用：原始合成加速度";
+  els.energyBar.style.width = `${Math.min((s.measured / 3.5) * 100, 100)}%`;
+  els.buzzerBox.querySelector("span").textContent = s.icon;
+  els.buzzerText.textContent = s.buzzer;
+  els.alertText.textContent = s.message;
+
+  document.body.classList.remove("level-0", "level-1", "level-2", "level-3");
+  document.body.classList.add(`level-${s.level}`);
+
+  const barLength = Math.min(Math.round(s.measured * 10), 35);
+  const bar = "█".repeat(barLength) + "░".repeat(35 - barLength);
+  els.terminalText.textContent =
+`[系統] ✅ MPU6050 硬體初始化成功。
+X=${s.x.toFixed(2)}g, Y=${s.y.toFixed(2)}g, Z=${s.z.toFixed(2)}g
+[${bar}] 即時震度: ${s.measured.toFixed(2)}g (L${s.level})
+🏆 最高 PGA 紀錄: ${maxPga.toFixed(2)} g`;
+
+  els.heroLevel.textContent = `L${s.level}`;
+  els.heroAccel.textContent = `${s.measured.toFixed(2)} g`;
+  els.heroPga.textContent = `${maxPga.toFixed(2)} g`;
+}
+
+function pushWave() {
+  const s = getState();
+  wave.x.push(s.x);
+  wave.y.push(s.y);
+  wave.z.push(s.z);
+  wave.t.push(s.measured);
+  Object.keys(wave).forEach(k => {
+    if (wave[k].length > 120) wave[k].shift();
+  });
+}
+
+function drawWave() {
+  const canvas = els.canvas;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.fillStyle = "rgba(5, 10, 18, 0.85)";
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.10)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 8; i++) {
+    const y = (h / 8) * i;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  const drawLine = (arr, color, scale = 3, offset = 0) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    arr.forEach((v, i) => {
+      const x = (w / (arr.length - 1)) * i;
+      const y = h / 2 - ((v - offset) / scale) * (h * 0.42);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  };
+
+  drawLine(wave.x, "#ff5c70", 3, 0);
+  drawLine(wave.y, "#ffd45c", 3, 0);
+  drawLine(wave.z, "#58d4ff", 3, 0);
+  drawLine(wave.t, "#b99cff", 3, 0);
+
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.font = "20px system-ui";
+  ctx.fillText("三軸加速度與警報判斷值", 24, 34);
+}
+
+function randomShake() {
+  const magnitude = 0.4 + Math.random() * 2.4;
+  const angle = Math.random() * Math.PI * 2;
+  const vertical = (Math.random() - 0.5) * 1.6;
+  els.x.value = (Math.cos(angle) * magnitude).toFixed(2);
+  els.y.value = (Math.sin(angle) * magnitude).toFixed(2);
+  els.z.value = (1 + vertical).toFixed(2);
+  render();
+  pushWave();
+  drawWave();
+}
+
+[els.x, els.y, els.z, els.l1, els.l2, els.l3, els.gravityCorrection].forEach(el => {
+  el.addEventListener("input", () => {
+    render();
+    pushWave();
+    drawWave();
+  });
+});
+
+els.randomShake.addEventListener("click", randomShake);
+
+setInterval(() => {
+  tick += 1;
+  const s = getState();
+
+  if (s.level > 0) {
+    const jitter = 0.02 * Math.sin(tick / 2);
+    wave.x.push(s.x + jitter);
+    wave.y.push(s.y - jitter);
+    wave.z.push(s.z + jitter * 0.5);
+    wave.t.push(Math.max(0, s.measured + jitter));
+  } else {
+    wave.x.push(s.x);
+    wave.y.push(s.y);
+    wave.z.push(s.z);
+    wave.t.push(s.measured);
+  }
+
+  Object.keys(wave).forEach(k => {
+    if (wave[k].length > 120) wave[k].shift();
+  });
+
+  render();
+  drawWave();
+}, 200);
+
+render();
+drawWave();
+
+  </script>
+</body>
+</html>
