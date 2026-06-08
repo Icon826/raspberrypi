@@ -476,7 +476,6 @@
 
       <div class="tabs" role="tablist">
         <button class="tab-btn active" data-tab="report-tab">📘 報告導覽</button>
-        <button class="tab-btn" data-tab="fault-tab">🧭 斷層與沙灘球</button>
         <button class="tab-btn" data-tab="risk-tab">⚠️ 地震風險</button>
         <button class="tab-btn" data-tab="sim-tab">📡 微型地震儀</button>
       </div>
@@ -493,42 +492,6 @@
             </div>
           </div>
           <div id="reportOutput"></div>
-        </div>
-      </div>
-
-      <div class="tab-panel" id="fault-tab">
-        <div class="fault-grid" id="faults-tab-content">
-          <div class="control-card">
-            <h3>斷層與震源機制互動</h3>
-            <label for="faultMode">選擇地殼受力模式</label>
-            <select id="faultMode">
-              <option value="normal">拉張力：正斷層</option>
-              <option value="reverse" selected>擠壓力：逆斷層</option>
-              <option value="strike">剪切力：平移斷層</option>
-            </select>
-
-            <label for="strikeSlider">走向 Strike (°)：<strong id="strikeVal">198</strong></label>
-            <input id="strikeSlider" type="range" min="0" max="360" step="1" value="198">
-
-            <label for="dipSlider">傾角 Dip (°)：<strong id="dipVal">18</strong></label>
-            <input id="dipSlider" type="range" min="0" max="90" step="1" value="18">
-
-            <label for="rakeSlider">滑移角 Rake (°)：<strong id="rakeVal">51</strong></label>
-            <input id="rakeSlider" type="range" min="-180" max="180" step="1" value="51">
-
-            <div class="note" style="color:#334155;background:#fff7d6;border-color:#f6d365;">
-              <strong style="color:#7c5a00;">堪察加案例：</strong>
-              NP1 = Strike 198°、Dip 18°、Rake 51°，低傾角且帶逆衝成分，較符合隱沒帶板塊界面。
-            </div>
-          </div>
-
-          <div>
-            <div id="faultOutput"></div>
-            <div class="beachball-layout" style="margin-top:1rem;">
-              <div id="beachballSvg" class="svg-box"></div>
-              <div id="beachballInfo" class="mini-card"></div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -888,8 +851,6 @@
     // =========================
     // Fault SVG
     // =========================
-    const faultMode = document.getElementById("faultMode");
-
     function makeFaultSvg(mode) {
       if (mode === "normal") {
         return `
@@ -974,18 +935,9 @@
         </div>`;
     }
 
-    faultMode.addEventListener("change", () => {
-      document.getElementById("faultOutput").innerHTML = makeFaultSvg(faultMode.value);
-    });
-    document.getElementById("faultOutput").innerHTML = makeFaultSvg("reverse");
-
     // =========================
     // Beachball simulator
     // =========================
-    const strikeSlider = document.getElementById("strikeSlider");
-    const dipSlider = document.getElementById("dipSlider");
-    const rakeSlider = document.getElementById("rakeSlider");
-
     function momentTensorNED(strike, dip, rake) {
       const s = strike * Math.PI / 180;
       const d = dip * Math.PI / 180;
@@ -1062,20 +1014,7 @@
       `;
     }
 
-    function renderBeachball() {
-      const strike = Number(strikeSlider.value);
-      const dip = Number(dipSlider.value);
-      const rake = Number(rakeSlider.value);
-      document.getElementById("strikeVal").textContent = strike.toFixed(0);
-      document.getElementById("dipVal").textContent = dip.toFixed(0);
-      document.getElementById("rakeVal").textContent = rake.toFixed(0);
-      document.getElementById("beachballSvg").innerHTML = makeBeachballSvg(strike, dip, rake);
-    }
-
-    [strikeSlider, dipSlider, rakeSlider].forEach(el => el.addEventListener("input", renderBeachball));
-    renderBeachball();
-
-    // =========================
+// =========================
     // Risk calculator
     // =========================
     const hazardSlider = document.getElementById("hazardSlider");
