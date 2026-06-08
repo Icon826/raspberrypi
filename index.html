@@ -1,804 +1,386 @@
 <!DOCTYPE html>
-<!-- 單檔版：CSS 與 JavaScript 已內嵌，可直接用瀏覽器開啟。 -->
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>微型地震預警與環境監測系統｜互動式網頁修改版</title>
-  <meta name="description" content="Raspberry Pi + MPU6050 微型地震儀互動式展示網頁。" />
+  <title>地震學期末互動式總報告｜GitHub Pages 版</title>
+  <meta name="description" content="整合 GitHub 微型地震儀展示與 Hugging Face Gradio 互動式地震學報告的靜態網頁版。" />
   <style>
-* {
-  box-sizing: border-box;
-}
-
-:root {
-  --bg: #08111f;
-  --bg2: #0e1d32;
-  --card: rgba(255, 255, 255, 0.08);
-  --card2: rgba(255, 255, 255, 0.12);
-  --text: #eaf2ff;
-  --muted: #a8b7cb;
-  --line: rgba(255, 255, 255, 0.18);
-  --green: #48e39b;
-  --cyan: #58d4ff;
-  --yellow: #ffd45c;
-  --orange: #ff9b52;
-  --red: #ff5c70;
-  --purple: #b99cff;
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  margin: 0;
-  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(88, 212, 255, 0.18), transparent 36rem),
-    radial-gradient(circle at 85% 8%, rgba(255, 92, 112, 0.14), transparent 28rem),
-    linear-gradient(135deg, var(--bg), var(--bg2));
-  color: var(--text);
-  min-height: 100vh;
-}
-
-.bg-orb {
-  position: fixed;
-  border-radius: 999px;
-  filter: blur(50px);
-  opacity: 0.35;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.orb-1 {
-  width: 22rem;
-  height: 22rem;
-  background: var(--cyan);
-  left: -7rem;
-  top: 12rem;
-}
-
-.orb-2 {
-  width: 18rem;
-  height: 18rem;
-  background: var(--red);
-  right: -5rem;
-  top: 28rem;
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(18px);
-  background: rgba(8, 17, 31, 0.78);
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem min(5vw, 4rem);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-}
-
-.brand-icon {
-  width: 3rem;
-  height: 3rem;
-  display: grid;
-  place-items: center;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, rgba(255, 92, 112, 0.95), rgba(255, 155, 82, 0.95));
-  box-shadow: 0 10px 28px rgba(255, 92, 112, 0.25);
-  font-size: 1.5rem;
-}
-
-.brand h1 {
-  font-size: 1rem;
-  margin: 0;
-}
-
-.brand p {
-  margin: 0.2rem 0 0;
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-
-.nav {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.nav a {
-  color: var(--muted);
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-
-.nav a:hover {
-  color: var(--text);
-}
-
-main {
-  width: min(1180px, calc(100% - 2rem));
-  margin: 0 auto;
-}
-
-.hero {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 2rem;
-  align-items: center;
-  min-height: 78vh;
-  padding: 4rem 0 3rem;
-}
-
-.eyebrow {
-  display: inline-flex;
-  width: fit-content;
-  color: var(--cyan);
-  background: rgba(88, 212, 255, 0.1);
-  border: 1px solid rgba(88, 212, 255, 0.3);
-  border-radius: 999px;
-  padding: 0.45rem 0.8rem;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-}
-
-.hero h2 {
-  font-size: clamp(2.3rem, 5vw, 4.8rem);
-  line-height: 1.08;
-  letter-spacing: -0.05em;
-  margin: 0 0 1.2rem;
-}
-
-.hero p {
-  color: var(--muted);
-  line-height: 1.8;
-  font-size: 1.05rem;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 0.9rem;
-  margin-top: 1.6rem;
-  flex-wrap: wrap;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  border-radius: 999px;
-  padding: 0.85rem 1.2rem;
-  font-weight: 700;
-}
-
-.primary {
-  background: linear-gradient(135deg, var(--cyan), var(--green));
-  color: #07101d;
-}
-
-.ghost {
-  color: var(--text);
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.glass, .card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 1.5rem;
-  box-shadow: var(--shadow);
-}
-
-.hero-card {
-  padding: 1.2rem;
-}
-
-.mini-terminal {
-  background: #050a12;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 1.1rem;
-  overflow: hidden;
-}
-
-.terminal-dots {
-  display: flex;
-  gap: 0.4rem;
-  padding: 0.8rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.terminal-dots span {
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 999px;
-  background: #ff5c70;
-}
-
-.terminal-dots span:nth-child(2) {
-  background: #ffd45c;
-}
-
-.terminal-dots span:nth-child(3) {
-  background: #48e39b;
-}
-
-pre {
-  margin: 0;
-  padding: 1.2rem;
-  white-space: pre-wrap;
-  color: #c8ffe4;
-  line-height: 1.7;
-  min-height: 12rem;
-}
-
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.8rem;
-  margin-top: 1rem;
-}
-
-.status-grid div {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  padding: 1rem;
-}
-
-.status-grid span {
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.status-grid strong {
-  display: block;
-  font-size: 1.25rem;
-  margin-top: 0.35rem;
-}
-
-.section {
-  padding: 4.5rem 0;
-}
-
-.section-title {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1.4rem;
-}
-
-.section-title span {
-  width: 2.5rem;
-  height: 2.5rem;
-  display: grid;
-  place-items: center;
-  border-radius: 0.85rem;
-  background: rgba(88, 212, 255, 0.13);
-  border: 1px solid rgba(88, 212, 255, 0.35);
-  color: var(--cyan);
-  font-weight: 900;
-}
-
-.section-title h2 {
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
-  margin: 0;
-}
-
-.cards {
-  display: grid;
-  gap: 1rem;
-}
-
-.three {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.card {
-  padding: 1.3rem;
-}
-
-.card-icon {
-  font-size: 2rem;
-  margin-bottom: 0.8rem;
-}
-
-.card h3 {
-  margin: 0 0 0.6rem;
-}
-
-.card p {
-  color: var(--muted);
-  line-height: 1.7;
-}
-
-code {
-  background: rgba(255, 255, 255, 0.1);
-  color: #c7f7ff;
-  padding: 0.16rem 0.35rem;
-  border-radius: 0.35rem;
-  font-size: 0.9em;
-}
-
-.flow {
-  margin-top: 1rem;
-  padding: 1.2rem;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.flow-step {
-  min-height: 6rem;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.07);
-  border-radius: 1rem;
-  border: 1px solid var(--line);
-  line-height: 1.45;
-  font-weight: 800;
-}
-
-.flow-step small {
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.flow-arrow {
-  color: var(--cyan);
-  font-size: 1.5rem;
-  font-weight: 900;
-}
-
-.sim-grid {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 1rem;
-}
-
-.panel {
-  padding: 1.4rem;
-}
-
-.panel-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1.2rem;
-}
-
-.panel-head h3 {
-  margin: 0;
-}
-
-.panel-head span {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.small-btn {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.55rem 0.8rem;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.small-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.slider-row {
-  margin-bottom: 1.1rem;
-}
-
-.slider-row label, .thresholds label {
-  display: flex;
-  justify-content: space-between;
-  color: var(--muted);
-  margin-bottom: 0.45rem;
-}
-
-input[type="range"] {
-  width: 100%;
-  accent-color: var(--cyan);
-}
-
-.axis-x input { accent-color: var(--red); }
-.axis-y input { accent-color: var(--yellow); }
-.axis-z input { accent-color: var(--cyan); }
-
-.toggle-box {
-  display: flex;
-  gap: 0.9rem;
-  align-items: center;
-  padding: 1rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  margin: 1rem 0;
-}
-
-.toggle-box p {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.switch {
-  position: relative;
-  width: 3.2rem;
-  height: 1.75rem;
-  flex: 0 0 auto;
-}
-
-.switch input {
-  display: none;
-}
-
-.switch-ui {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  cursor: pointer;
-}
-
-.switch-ui::after {
-  content: "";
-  position: absolute;
-  top: 0.22rem;
-  left: 0.22rem;
-  width: 1.32rem;
-  height: 1.32rem;
-  background: white;
-  border-radius: 50%;
-  transition: 0.25s;
-}
-
-.switch input:checked + .switch-ui {
-  background: linear-gradient(135deg, var(--cyan), var(--green));
-}
-
-.switch input:checked + .switch-ui::after {
-  transform: translateX(1.45rem);
-}
-
-.thresholds {
-  margin-top: 1.2rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
-}
-
-.thresholds h4 {
-  margin: 0 0 1rem;
-}
-
-.output-panel {
-  text-align: center;
-}
-
-.level-badge {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 10rem;
-  border-radius: 999px;
-  padding: 0.55rem 1rem;
-  background: rgba(72, 227, 155, 0.13);
-  border: 1px solid rgba(72, 227, 155, 0.38);
-  color: var(--green);
-  font-weight: 900;
-}
-
-.big-number {
-  margin: 1.1rem 0 0.25rem;
-  font-size: clamp(4rem, 10vw, 7rem);
-  font-weight: 950;
-  letter-spacing: -0.08em;
-}
-
-.big-number small {
-  font-size: 1.3rem;
-  color: var(--muted);
-  letter-spacing: 0;
-}
-
-.measure-label {
-  color: var(--muted);
-  margin: 0 0 1.2rem;
-}
-
-.bar-wrap {
-  height: 1rem;
-  background: rgba(255,255,255,0.12);
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-}
-
-.bar-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
-  border-radius: 999px;
-  transition: width 0.2s ease;
-}
-
-.device-preview {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 1rem;
-  margin: 1.2rem 0;
-}
-
-.led {
-  min-height: 9rem;
-  border-radius: 1.2rem;
-  background: radial-gradient(circle, rgba(72, 227, 155, 0.12), rgba(255,255,255,0.04));
-  border: 1px solid var(--line);
-  position: relative;
-  display: grid;
-  place-items: center;
-}
-
-.led::after {
-  content: "LED";
-  position: absolute;
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.buzzer {
-  min-height: 9rem;
-  border-radius: 1.2rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--line);
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-}
-
-.buzzer span {
-  font-size: 2.6rem;
-}
-
-.buzzer strong {
-  display: block;
-  margin-top: 0.35rem;
-}
-
-.alert-text {
-  color: var(--muted);
-  line-height: 1.7;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  padding: 1rem;
-}
-
-.wave-panel {
-  margin-top: 1rem;
-  padding: 1.2rem;
-}
-
-canvas {
-  width: 100%;
-  max-width: 100%;
-  background: rgba(5, 10, 18, 0.72);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-}
-
-.legend {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-top: 0.8rem;
-  color: var(--muted);
-}
-
-.legend span::before {
-  content: "";
-  width: 0.8rem;
-  height: 0.8rem;
-  display: inline-block;
-  margin-right: 0.35rem;
-  border-radius: 50%;
-  vertical-align: middle;
-}
-
-.legend-x::before { background: var(--red); }
-.legend-y::before { background: var(--yellow); }
-.legend-z::before { background: var(--cyan); }
-.legend-t::before { background: var(--purple); }
-
-.problem-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.problem-card {
-  padding: 1.4rem;
-}
-
-.problem-card p {
-  color: var(--muted);
-  line-height: 1.8;
-}
-
-.formula {
-  margin: 1rem 0;
-  padding: 1rem;
-  border-radius: 1rem;
-  background: rgba(88, 212, 255, 0.1);
-  border: 1px solid rgba(88, 212, 255, 0.25);
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: #c7f7ff;
-}
-
-.check-list {
-  padding: 0;
-  list-style: none;
-}
-
-.check-list li {
-  margin: 0.7rem 0;
-  color: var(--muted);
-}
-
-.check-list li::before {
-  content: "✓";
-  color: var(--green);
-  font-weight: 900;
-  margin-right: 0.5rem;
-}
-
-.level-one { border-color: rgba(255, 212, 92, 0.38); }
-.level-two { border-color: rgba(255, 155, 82, 0.38); }
-.level-three { border-color: rgba(255, 92, 112, 0.42); }
-
-.deploy-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.deploy-card {
-  padding: 1.4rem;
-}
-
-.deploy-card li {
-  color: var(--muted);
-  line-height: 1.85;
-  margin: 0.35rem 0;
-}
-
-.note {
-  margin-top: 1rem;
-  padding: 1rem;
-  border-radius: 1rem;
-  color: var(--muted);
-  background: rgba(255, 212, 92, 0.1);
-  border: 1px solid rgba(255, 212, 92, 0.28);
-  line-height: 1.7;
-}
-
-footer {
-  text-align: center;
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-  padding: 2rem 1rem;
-  margin-top: 2rem;
-}
-
-body.level-1 .level-badge {
-  color: var(--yellow);
-  background: rgba(255, 212, 92, 0.13);
-  border-color: rgba(255, 212, 92, 0.38);
-}
-
-body.level-2 .level-badge {
-  color: var(--orange);
-  background: rgba(255, 155, 82, 0.13);
-  border-color: rgba(255, 155, 82, 0.38);
-}
-
-body.level-3 .level-badge {
-  color: var(--red);
-  background: rgba(255, 92, 112, 0.13);
-  border-color: rgba(255, 92, 112, 0.38);
-}
-
-body.level-1 .led {
-  animation: breathe 1.6s infinite ease-in-out;
-}
-
-body.level-2 .led {
-  animation: blink 0.8s infinite steps(2);
-}
-
-body.level-3 .led {
-  animation: blink 0.28s infinite steps(2);
-}
-
-@keyframes breathe {
-  0%, 100% { box-shadow: 0 0 8px rgba(255, 212, 92, 0.3); background: rgba(255, 212, 92, 0.08); }
-  50% { box-shadow: 0 0 38px rgba(255, 212, 92, 0.85); background: rgba(255, 212, 92, 0.3); }
-}
-
-@keyframes blink {
-  0%, 49% { box-shadow: 0 0 40px rgba(255, 92, 112, 0.8); background: rgba(255, 92, 112, 0.32); }
-  50%, 100% { box-shadow: none; background: rgba(255, 255, 255, 0.04); }
-}
-
-@media (max-width: 900px) {
-  .topbar, .hero, .sim-grid, .problem-grid, .deploy-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.9rem;
-  }
-
-  .nav {
-    justify-content: flex-start;
-  }
-
-  .three {
-    grid-template-columns: 1fr;
-  }
-
-  .flow {
-    grid-template-columns: 1fr;
-  }
-
-  .flow-arrow {
-    transform: rotate(90deg);
-    justify-self: center;
-  }
-
-  .hero {
-    min-height: auto;
-    padding-top: 2rem;
-  }
-}
-
-@media (max-width: 540px) {
-  main {
-    width: min(100% - 1rem, 1180px);
-  }
-
-  .status-grid, .device-preview {
-    grid-template-columns: 1fr;
-  }
-
-  .hero h2 {
-    font-size: 2.15rem;
-  }
-}
-
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #06101f;
+      --bg2: #0b1b31;
+      --card: rgba(255, 255, 255, 0.08);
+      --card2: rgba(255, 255, 255, 0.12);
+      --text: #f4f8ff;
+      --muted: #c7d7ee;
+      --line: rgba(255, 255, 255, 0.18);
+      --green: #48e39b;
+      --cyan: #58d4ff;
+      --yellow: #ffd45c;
+      --orange: #ff9b52;
+      --red: #ff5c70;
+      --purple: #b99cff;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+      --darkText: #0f172a;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 5%, rgba(88, 212, 255, 0.22), transparent 32rem),
+        radial-gradient(circle at 90% 8%, rgba(255, 92, 112, 0.18), transparent 28rem),
+        radial-gradient(circle at 50% 100%, rgba(185, 156, 255, 0.13), transparent 30rem),
+        linear-gradient(135deg, var(--bg), var(--bg2) 50%, #111827);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .bg-orb {
+      position: fixed;
+      border-radius: 999px;
+      filter: blur(50px);
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .orb-1 { width: 22rem; height: 22rem; background: var(--cyan); left: -7rem; top: 12rem; }
+    .orb-2 { width: 18rem; height: 18rem; background: var(--red); right: -5rem; top: 28rem; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(8, 17, 31, 0.82);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem min(5vw, 4rem);
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.9rem; }
+    .brand-icon {
+      width: 3rem; height: 3rem; display: grid; place-items: center;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, rgba(255, 92, 112, 0.95), rgba(255, 155, 82, 0.95));
+      box-shadow: 0 10px 28px rgba(255, 92, 112, 0.25);
+      font-size: 1.5rem;
+    }
+    .brand h1 { font-size: 1rem; margin: 0; }
+    .brand p { margin: 0.2rem 0 0; color: #a8b7cb; font-size: 0.78rem; }
+
+    .nav { display: flex; gap: 0.85rem; flex-wrap: wrap; justify-content: flex-end; }
+    .nav a {
+      color: #b9c7dc; text-decoration: none; font-size: 0.88rem;
+      padding: 0.45rem 0.65rem; border-radius: 999px;
+    }
+    .nav a:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+
+    main { width: min(1200px, calc(100% - 2rem)); margin: 0 auto; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 2rem;
+      align-items: center;
+      min-height: 78vh;
+      padding: 4rem 0 3rem;
+    }
+    .eyebrow {
+      display: inline-flex; width: fit-content; color: var(--cyan);
+      background: rgba(88, 212, 255, 0.1);
+      border: 1px solid rgba(88, 212, 255, 0.3);
+      border-radius: 999px; padding: 0.45rem 0.8rem;
+      font-size: 0.9rem; margin-bottom: 1rem;
+    }
+    .hero h2 {
+      font-size: clamp(2.2rem, 5vw, 4.8rem);
+      line-height: 1.08; letter-spacing: -0.05em;
+      margin: 0 0 1.2rem;
+    }
+    .hero p { color: var(--muted); line-height: 1.8; font-size: 1.05rem; }
+    .hero-actions { display: flex; gap: 0.9rem; margin-top: 1.6rem; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+      border-radius: 999px; padding: 0.85rem 1.2rem; font-weight: 800;
+    }
+    .primary { background: linear-gradient(135deg, var(--cyan), var(--green)); color: #07101d; }
+    .ghost { color: var(--text); border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05); }
+
+    .glass, .card, .info-card, .mini-card, .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .hero-card { padding: 1.2rem; }
+    .mini-terminal {
+      background: #050a12; border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 1.1rem; overflow: hidden;
+    }
+    .terminal-dots { display: flex; gap: 0.4rem; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .terminal-dots span { width: 0.7rem; height: 0.7rem; border-radius: 999px; background: #ff5c70; }
+    .terminal-dots span:nth-child(2) { background: #ffd45c; }
+    .terminal-dots span:nth-child(3) { background: #48e39b; }
+
+    pre {
+      margin: 0; padding: 1.2rem; white-space: pre-wrap; color: #c8ffe4;
+      line-height: 1.7; min-height: 12rem;
+      font-family: Consolas, Monaco, monospace;
+    }
+
+    .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-top: 1rem; }
+    .status-grid div {
+      background: rgba(255,255,255,0.07); border: 1px solid var(--line);
+      border-radius: 1rem; padding: 1rem;
+    }
+    .status-grid span { color: #a8b7cb; font-size: 0.82rem; }
+    .status-grid strong { display: block; font-size: 1.25rem; margin-top: 0.35rem; }
+
+    .section { padding: 4.5rem 0; }
+    .section-title { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.4rem; }
+    .section-title span {
+      width: 2.5rem; height: 2.5rem; display: grid; place-items: center;
+      border-radius: 0.85rem; background: rgba(88, 212, 255, 0.13);
+      border: 1px solid rgba(88, 212, 255, 0.35);
+      color: var(--cyan); font-weight: 900;
+    }
+    .section-title h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); margin: 0; }
+
+    .cards { display: grid; gap: 1rem; }
+    .three { grid-template-columns: repeat(3, 1fr); }
+    .two { grid-template-columns: repeat(2, 1fr); }
+    .card, .info-card, .mini-card, .panel { padding: 1.3rem; }
+    .card-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+    .card h3, .info-card h3, .mini-card h3 { margin: 0 0 0.6rem; color: #ffffff; }
+    .card p, .info-card p, .mini-card p, .mini-card li { color: #d6e6fa; line-height: 1.75; }
+    .info-card strong, .mini-card strong { color: #9be7ff; }
+
+    code {
+      background: rgba(255, 255, 255, 0.1); color: #c7f7ff;
+      padding: 0.16rem 0.35rem; border-radius: 0.35rem; font-size: 0.9em;
+    }
+
+    .flow {
+      margin-top: 1rem; padding: 1.2rem; display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
+      align-items: center; gap: 0.6rem;
+    }
+    .flow-step {
+      min-height: 6rem; display: grid; place-items: center; text-align: center;
+      background: rgba(255, 255, 255, 0.07); border-radius: 1rem;
+      border: 1px solid var(--line); line-height: 1.45; font-weight: 800;
+    }
+    .flow-step small { color: var(--muted); font-weight: 500; }
+    .flow-arrow { color: var(--cyan); font-size: 1.5rem; font-weight: 900; }
+
+    .control-card {
+      background: #f8fafc;
+      color: var(--darkText);
+      border-radius: 1.25rem;
+      padding: 1.2rem;
+      border: 1px solid rgba(148, 163, 184, 0.75);
+      box-shadow: 0 16px 38px rgba(0,0,0,0.18);
+    }
+    .control-card h3, .control-card label, .control-card p, .control-card span, .control-card strong {
+      color: var(--darkText) !important;
+    }
+    .control-card label {
+      display: block;
+      font-weight: 800;
+      margin: 0.65rem 0 0.35rem;
+    }
+    .control-card select,
+    .control-card input[type="number"] {
+      width: 100%;
+      color: var(--darkText);
+      background: #fff;
+      border: 1px solid rgba(100, 116, 139, 0.8);
+      border-radius: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      font-size: 1rem;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--cyan); }
+    .small-btn {
+      border: 0; border-radius: 999px; padding: 0.65rem 1rem;
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      color: #06111f; cursor: pointer; font-weight: 900;
+      box-shadow: 0 10px 28px rgba(88, 212, 255, 0.25);
+    }
+    .small-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+    .sim-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 1rem; }
+    .panel-head { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 1.2rem; }
+    .panel-head h3 { margin: 0; }
+    .panel-head span { color: var(--muted); font-size: 0.9rem; }
+
+    .slider-row { margin-bottom: 1.1rem; }
+    .slider-row label, .thresholds label { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 0.45rem; }
+    .axis-x input { accent-color: var(--red); }
+    .axis-y input { accent-color: var(--yellow); }
+    .axis-z input { accent-color: var(--cyan); }
+
+    .toggle-box {
+      display: flex; gap: 0.9rem; align-items: center; padding: 1rem;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--line);
+      border-radius: 1rem; margin: 1rem 0;
+    }
+    .toggle-box p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.9rem; }
+
+    .switch { position: relative; width: 3.2rem; height: 1.75rem; flex: 0 0 auto; }
+    .switch input { display: none; }
+    .switch-ui { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,0.18); cursor: pointer; }
+    .switch-ui::after {
+      content: ""; position: absolute; top: 0.22rem; left: 0.22rem; width: 1.32rem; height: 1.32rem;
+      background: white; border-radius: 50%; transition: 0.25s;
+    }
+    .switch input:checked + .switch-ui { background: linear-gradient(135deg, var(--cyan), var(--green)); }
+    .switch input:checked + .switch-ui::after { transform: translateX(1.45rem); }
+
+    .thresholds { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+    .thresholds h4 { margin: 0 0 1rem; }
+
+    .output-panel { text-align: center; }
+    .level-badge {
+      display: inline-flex; justify-content: center; align-items: center; min-width: 10rem;
+      border-radius: 999px; padding: 0.55rem 1rem;
+      background: rgba(72, 227, 155, 0.13);
+      border: 1px solid rgba(72, 227, 155, 0.38);
+      color: var(--green); font-weight: 900;
+    }
+    .big-number { margin: 1.1rem 0 0.25rem; font-size: clamp(4rem, 10vw, 7rem); font-weight: 950; letter-spacing: -0.08em; }
+    .big-number small { font-size: 1.3rem; color: var(--muted); letter-spacing: 0; }
+    .measure-label { color: var(--muted); margin: 0 0 1.2rem; }
+    .bar-wrap { height: 1rem; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
+    .bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), var(--yellow), var(--red)); border-radius: 999px; transition: width 0.2s ease; }
+
+    .device-preview { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1rem; margin: 1.2rem 0; }
+    .led {
+      min-height: 9rem; border-radius: 1.2rem;
+      background: radial-gradient(circle, rgba(72, 227, 155, 0.12), rgba(255,255,255,0.04));
+      border: 1px solid var(--line); position: relative; display: grid; place-items: center;
+    }
+    .led::after { content: "LED"; position: absolute; color: var(--muted); font-weight: 800; }
+    .buzzer {
+      min-height: 9rem; border-radius: 1.2rem; background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line); display: grid; place-items: center; padding: 1rem;
+    }
+    .buzzer span { font-size: 2.6rem; }
+    .buzzer strong { display: block; margin-top: 0.35rem; }
+    .alert-text {
+      color: var(--muted); line-height: 1.7; background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line); border-radius: 1rem; padding: 1rem;
+    }
+
+    .wave-panel { margin-top: 1rem; padding: 1.2rem; }
+    canvas { width: 100%; max-width: 100%; background: rgba(5, 10, 18, 0.72); border: 1px solid var(--line); border-radius: 1rem; }
+    .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.8rem; color: var(--muted); }
+    .legend span::before {
+      content: ""; width: 0.8rem; height: 0.8rem; display: inline-block;
+      margin-right: 0.35rem; border-radius: 50%; vertical-align: middle;
+    }
+    .legend-x::before { background: var(--red); }
+    .legend-y::before { background: var(--yellow); }
+    .legend-z::before { background: var(--cyan); }
+    .legend-t::before { background: var(--purple); }
+
+    .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .problem-card { padding: 1.4rem; }
+    .problem-card p { color: var(--muted); line-height: 1.8; }
+    .formula {
+      margin: 1rem 0; padding: 1rem; border-radius: 1rem;
+      background: rgba(88, 212, 255, 0.1);
+      border: 1px solid rgba(88, 212, 255, 0.25);
+      text-align: center; font-size: 1.5rem; font-weight: 900; color: #c7f7ff;
+    }
+    .check-list { padding: 0; list-style: none; }
+    .check-list li { margin: 0.7rem 0; color: var(--muted); }
+    .check-list li::before { content: "✓"; color: var(--green); font-weight: 900; margin-right: 0.5rem; }
+
+    .note {
+      margin-top: 1rem; padding: 1rem; border-radius: 1rem; color: #fef7dd;
+      background: rgba(255, 212, 92, 0.1);
+      border: 1px solid rgba(255, 212, 92, 0.28);
+      line-height: 1.7;
+    }
+    .note strong { color: #fff0a8; }
+
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 0.65rem; margin-bottom: 1rem;
+    }
+    .tab-btn {
+      border: 1px solid rgba(88,212,255,0.32);
+      background: rgba(88,212,255,0.1);
+      color: #d9f6ff;
+      border-radius: 999px;
+      padding: 0.7rem 1rem;
+      font-weight: 850;
+      cursor: pointer;
+    }
+    .tab-btn.active { background: linear-gradient(135deg, var(--cyan), var(--green)); color: #07101d; border-color: transparent; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .report-grid { display: grid; grid-template-columns: 0.78fr 1.22fr; gap: 1rem; align-items: start; }
+    .fault-grid, .risk-grid { display: grid; grid-template-columns: 0.78fr 1.22fr; gap: 1rem; align-items: start; }
+    .svg-box {
+      background: rgba(5,10,18,0.86);
+      border-radius: 1.2rem;
+      border: 1px solid rgba(255,255,255,0.18);
+      overflow: hidden;
+    }
+    .svg-box svg { display: block; width: 100%; height: auto; }
+    .beachball-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+
+    .risk-number {
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      font-weight: 950;
+      letter-spacing: -0.06em;
+      text-align: center;
+      margin: 0.5rem 0;
+    }
+
+    .footer { text-align: center; color: #a8b7cb; border-top: 1px solid var(--line); padding: 2rem 1rem; margin-top: 2rem; }
+
+    body.level-1 .level-badge { color: var(--yellow); background: rgba(255, 212, 92, 0.13); border-color: rgba(255, 212, 92, 0.38); }
+    body.level-2 .level-badge { color: var(--orange); background: rgba(255, 155, 82, 0.13); border-color: rgba(255, 155, 82, 0.38); }
+    body.level-3 .level-badge { color: var(--red); background: rgba(255, 92, 112, 0.13); border-color: rgba(255, 92, 112, 0.38); }
+    body.level-1 .led { animation: breathe 1.6s infinite ease-in-out; }
+    body.level-2 .led { animation: blink 0.8s infinite steps(2); }
+    body.level-3 .led { animation: blink 0.28s infinite steps(2); }
+
+    @keyframes breathe {
+      0%, 100% { box-shadow: 0 0 8px rgba(255, 212, 92, 0.3); background: rgba(255, 212, 92, 0.08); }
+      50% { box-shadow: 0 0 38px rgba(255, 212, 92, 0.85); background: rgba(255, 212, 92, 0.3); }
+    }
+    @keyframes blink {
+      0%, 49% { box-shadow: 0 0 40px rgba(255, 92, 112, 0.8); background: rgba(255, 92, 112, 0.32); }
+      50%, 100% { box-shadow: none; background: rgba(255, 255, 255, 0.04); }
+    }
+
+    @media (max-width: 900px) {
+      .topbar, .hero, .sim-grid, .problem-grid, .report-grid, .fault-grid, .risk-grid, .beachball-layout { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; gap: 0.9rem; }
+      .nav { justify-content: flex-start; }
+      .three, .two { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .flow-arrow { transform: rotate(90deg); justify-self: center; }
+      .hero { min-height: auto; padding-top: 2rem; }
+    }
+
+    @media (max-width: 540px) {
+      main { width: min(100% - 1rem, 1200px); }
+      .status-grid, .device-preview { grid-template-columns: 1fr; }
+      .hero h2 { font-size: 2.15rem; }
+    }
   </style>
 </head>
+
 <body>
   <div class="bg-orb orb-1"></div>
   <div class="bg-orb orb-2"></div>
@@ -807,13 +389,17 @@ body.level-3 .led {
     <div class="brand">
       <div class="brand-icon">🌋</div>
       <div>
-        <h1>微型地震預警與環境監測系統</h1>
-        <p>Raspberry Pi × MPU6050 × LED / Buzzer × Discord Webhook</p>
+        <h1>地震學期末互動式總報告</h1>
+        <p>GitHub Pages 靜態版｜原 GitHub 微型地震儀 × Hugging Face 互動報告整合</p>
       </div>
     </div>
     <nav class="nav">
-      <a href="#overview">系統概念</a>
-      <a href="#simulator">即時模擬</a>
+      <a href="#overview">總覽</a>
+      <a href="#github-original">原 GitHub 內容</a>
+      <a href="#hf-report">互動報告</a>
+      <a href="#faults">斷層與沙灘球</a>
+      <a href="#risk">地震風險</a>
+      <a href="#simulator">地震儀模擬</a>
       <a href="#problem">核心問題</a>
     </nav>
   </header>
@@ -821,50 +407,35 @@ body.level-3 .led {
   <main>
     <section class="hero" id="overview">
       <div class="hero-text">
-        <div class="eyebrow">成果發表互動版</div>
-        <h2>把 Python 地震警報程式，變成可以展示、操作、解釋的網頁。</h2>
+        <div class="eyebrow">GitHub Pages Integrated Version</div>
+        <h2>地震學報告、震源機制球、地震風險與微型地震儀，整合成一份可上 GitHub 的互動網頁。</h2>
         <p>
-          這個網頁整理原始程式的功能邏輯：讀取 MPU6050 三軸加速度、計算合成加速度、
-          依照三級門檻觸發 LED、蜂鳴器與 Discord 警報，並用互動模擬說明
-          「為什麼靜止時也可能接近 1g」這個關鍵問題。
+          這份網頁保留原 GitHub 版微型地震儀展示內容，並加入 Hugging Face Gradio 版新增的互動式報告功能：
+          報告章節導覽、斷層運動圖、Strike / Dip / Rake 沙灘球互動模擬、地震風險計算與三軸加速度警報模擬。
         </p>
         <div class="hero-actions">
-          <a class="btn primary" href="#simulator">開始互動模擬</a>
-          <a class="btn ghost" href="#architecture">查看程式架構</a>
+          <a class="btn primary" href="#hf-report">開始看互動報告</a>
+          <a class="btn ghost" href="#simulator">操作地震儀模擬</a>
         </div>
       </div>
 
       <div class="hero-card glass">
         <div class="mini-terminal">
-          <div class="terminal-dots">
-            <span></span><span></span><span></span>
-          </div>
-          <pre id="terminalText">[系統] ✅ MPU6050 硬體初始化成功。
-正在即時採樣中...
+          <div class="terminal-dots"><span></span><span></span><span></span></div>
+          <pre id="terminalText">[系統] ✅ GitHub Pages 靜態版已載入。
+整合內容：原 GitHub HTML + Hugging Face 互動報告
 [░░░░░░░░░░░░░░░░░░░░] 即時震度: 0.00g (L0)</pre>
         </div>
         <div class="status-grid">
-          <div>
-            <span>目前等級</span>
-            <strong id="heroLevel">L0</strong>
-          </div>
-          <div>
-            <span>合成加速度</span>
-            <strong id="heroAccel">0.00 g</strong>
-          </div>
-          <div>
-            <span>最高 PGA</span>
-            <strong id="heroPga">0.00 g</strong>
-          </div>
+          <div><span>目前等級</span><strong id="heroLevel">L0</strong></div>
+          <div><span>合成加速度</span><strong id="heroAccel">0.00 g</strong></div>
+          <div><span>最高 PGA</span><strong id="heroPga">0.00 g</strong></div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="architecture">
-      <div class="section-title">
-        <span>01</span>
-        <h2>原始程式在做什麼？</h2>
-      </div>
+    <section class="section" id="github-original">
+      <div class="section-title"><span>01</span><h2>原 GitHub 微型地震儀內容</h2></div>
 
       <div class="cards three">
         <article class="card">
@@ -900,11 +471,95 @@ body.level-3 .led {
       </div>
     </section>
 
-    <section class="section" id="simulator">
-      <div class="section-title">
-        <span>02</span>
-        <h2>即時三軸加速度互動模擬</h2>
+    <section class="section" id="hf-report">
+      <div class="section-title"><span>02</span><h2>Hugging Face 互動式報告內容</h2></div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="report-tab">📘 報告導覽</button>
+        <button class="tab-btn" data-tab="fault-tab">🧭 斷層與沙灘球</button>
+        <button class="tab-btn" data-tab="risk-tab">⚠️ 地震風險</button>
+        <button class="tab-btn" data-tab="sim-tab">📡 微型地震儀</button>
       </div>
+
+      <div class="tab-panel active" id="report-tab">
+        <div class="report-grid">
+          <div class="control-card">
+            <h3>選擇報告章節</h3>
+            <label for="reportSelect">選擇報告章節</label>
+            <select id="reportSelect"></select>
+            <div class="note" style="color:#334155;background:#fff7d6;border-color:#f6d365;">
+              <strong style="color:#7c5a00;">使用方式：</strong>
+              切換章節後，右側會顯示從 Hugging Face 互動報告轉換成 GitHub 靜態版的內容。
+            </div>
+          </div>
+          <div id="reportOutput"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="fault-tab">
+        <div class="fault-grid" id="faults">
+          <div class="control-card">
+            <h3>斷層與震源機制互動</h3>
+            <label for="faultMode">選擇地殼受力模式</label>
+            <select id="faultMode">
+              <option value="normal">拉張力：正斷層</option>
+              <option value="reverse" selected>擠壓力：逆斷層</option>
+              <option value="strike">剪切力：平移斷層</option>
+            </select>
+
+            <label for="strikeSlider">走向 Strike (°)：<strong id="strikeVal">198</strong></label>
+            <input id="strikeSlider" type="range" min="0" max="360" step="1" value="198">
+
+            <label for="dipSlider">傾角 Dip (°)：<strong id="dipVal">18</strong></label>
+            <input id="dipSlider" type="range" min="0" max="90" step="1" value="18">
+
+            <label for="rakeSlider">滑移角 Rake (°)：<strong id="rakeVal">51</strong></label>
+            <input id="rakeSlider" type="range" min="-180" max="180" step="1" value="51">
+
+            <div class="note" style="color:#334155;background:#fff7d6;border-color:#f6d365;">
+              <strong style="color:#7c5a00;">堪察加案例：</strong>
+              NP1 = Strike 198°、Dip 18°、Rake 51°，低傾角且帶逆衝成分，較符合隱沒帶板塊界面。
+            </div>
+          </div>
+
+          <div>
+            <div id="faultOutput"></div>
+            <div class="beachball-layout" style="margin-top:1rem;">
+              <div id="beachballSvg" class="svg-box"></div>
+              <div id="beachballInfo" class="mini-card"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="risk-tab">
+        <div class="risk-grid" id="risk">
+          <div class="control-card">
+            <h3>地震風險互動計算器</h3>
+            <label for="hazardSlider">地震危害 Hazard：<strong id="hazardVal">6.0</strong></label>
+            <input id="hazardSlider" type="range" min="1" max="10" step="0.5" value="6">
+
+            <label for="exposureSlider">曝險程度 Exposure：<strong id="exposureVal">7.0</strong></label>
+            <input id="exposureSlider" type="range" min="1" max="10" step="0.5" value="7">
+
+            <label for="vulnerabilitySlider">脆弱度 Vulnerability：<strong id="vulnerabilityVal">6.0</strong></label>
+            <input id="vulnerabilitySlider" type="range" min="1" max="10" step="0.5" value="6">
+          </div>
+          <div id="riskOutput"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="sim-tab">
+        <div class="info-card">
+          <h3>微型地震儀互動模擬</h3>
+          <p>此分頁沿用原 GitHub 三軸加速度互動模擬，並保留 Hugging Face 版的報告脈絡與門檻設定說明。</p>
+          <a class="btn primary" href="#simulator">前往三軸加速度模擬器</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="simulator">
+      <div class="section-title"><span>03</span><h2>即時三軸加速度互動模擬</h2></div>
 
       <div class="sim-grid">
         <div class="panel glass">
@@ -950,15 +605,9 @@ body.level-3 .led {
 
         <div class="panel glass output-panel">
           <div class="level-badge" id="levelBadge">L0 安全</div>
-          <div class="big-number">
-            <span id="mainAccel">1.00</span>
-            <small>g</small>
-          </div>
+          <div class="big-number"><span id="mainAccel">1.00</span><small>g</small></div>
           <p class="measure-label" id="measureLabel">目前使用：原始合成加速度</p>
-
-          <div class="bar-wrap">
-            <div class="bar-fill" id="energyBar"></div>
-          </div>
+          <div class="bar-wrap"><div class="bar-fill" id="energyBar"></div></div>
 
           <div class="device-preview">
             <div class="led" id="ledLight"></div>
@@ -984,16 +633,13 @@ body.level-3 .led {
           <span class="legend-x">X</span>
           <span class="legend-y">Y</span>
           <span class="legend-z">Z</span>
-          <span class="legend-t">合成/校正值</span>
+          <span class="legend-t">合成 / 校正值</span>
         </div>
       </div>
     </section>
 
     <section class="section" id="problem">
-      <div class="section-title">
-        <span>03</span>
-        <h2>這份程式最重要的核心問題</h2>
-      </div>
+      <div class="section-title"><span>04</span><h2>核心問題與警報門檻說明</h2></div>
 
       <div class="problem-grid">
         <div class="glass problem-card">
@@ -1003,16 +649,14 @@ body.level-3 .led {
             但 MPU6050 會量到地球重力，所以感測器靜止時，通常 Z 軸就接近 1g。
           </p>
           <div class="formula">√(0² + 0² + 1²) = 1g</div>
-          <p>
-            如果 L1 門檻剛好設定為 1.0g，就可能在沒有明顯晃動時觸發一級警報。
-          </p>
+          <p>如果 L1 門檻剛好設定為 1.0g，就可能在沒有明顯晃動時觸發一級警報。</p>
         </div>
 
         <div class="glass problem-card">
           <h3>展示版 vs 嚴謹偵測版</h3>
           <p>
             目前程式很適合成果展示：LED、蜂鳴器、Discord、終端機進度條都很完整。
-            但若要做成較嚴謹的地震儀，需要把「姿態造成的重力投影」和「真實震動」分開。
+            若要做成較嚴謹的地震儀，還需要把重力投影與真實震動分開。
           </p>
           <ul class="check-list">
             <li>加入靜態校正與零點偏移修正</li>
@@ -1023,26 +667,19 @@ body.level-3 .led {
           </ul>
         </div>
       </div>
-    </section>
 
-    <section class="section">
-      <div class="section-title">
-        <span>04</span>
-        <h2>警報等級與硬體反應</h2>
-      </div>
-
-      <div class="cards three level-cards">
-        <article class="card level-one">
+      <div class="cards three" style="margin-top:1rem;">
+        <article class="card">
           <h3>🟡 L1 輕微有感</h3>
           <p>呼吸燈效果、低頻提示音，適合提醒「有震動，但不一定是事件」。</p>
           <strong>預設門檻：1.0g</strong>
         </article>
-        <article class="card level-two">
+        <article class="card">
           <h3>🟠 L2 中度有感</h3>
           <p>中速閃爍、雙音頻交替，代表震動已明顯超過基準。</p>
           <strong>預設門檻：1.5g</strong>
         </article>
-        <article class="card level-three">
+        <article class="card">
           <h3>🔴 L3 強烈有感</h3>
           <p>快速爆閃、高頻警報音，並可透過 Discord 發布事件訊息。</p>
           <strong>預設門檻：2.0g</strong>
@@ -1057,249 +694,530 @@ body.level-3 .led {
         最後改為 1.0g、1.5g、2.0g，分別作為一級、二級與三級警報門檻。
       </div>
     </section>
-
   </main>
 
-  <footer>
-    <p>Made for 微型地震預警與環境監測系統｜Static Web Demo</p>
+  <footer class="footer">
+    <p>Made for 地震學期末互動式總報告｜GitHub Pages Static Demo</p>
   </footer>
 
   <script>
-const els = {
-  x: document.querySelector("#xAxis"),
-  y: document.querySelector("#yAxis"),
-  z: document.querySelector("#zAxis"),
-  xVal: document.querySelector("#xVal"),
-  yVal: document.querySelector("#yVal"),
-  zVal: document.querySelector("#zVal"),
-  l1: document.querySelector("#l1"),
-  l2: document.querySelector("#l2"),
-  l3: document.querySelector("#l3"),
-  l1Val: document.querySelector("#l1Val"),
-  l2Val: document.querySelector("#l2Val"),
-  l3Val: document.querySelector("#l3Val"),
-  gravityCorrection: document.querySelector("#gravityCorrection"),
-  randomShake: document.querySelector("#randomShake"),
-  levelBadge: document.querySelector("#levelBadge"),
-  mainAccel: document.querySelector("#mainAccel"),
-  measureLabel: document.querySelector("#measureLabel"),
-  energyBar: document.querySelector("#energyBar"),
-  ledLight: document.querySelector("#ledLight"),
-  buzzerText: document.querySelector("#buzzerText"),
-  buzzerBox: document.querySelector("#buzzerBox"),
-  alertText: document.querySelector("#alertText"),
-  terminalText: document.querySelector("#terminalText"),
-  heroLevel: document.querySelector("#heroLevel"),
-  heroAccel: document.querySelector("#heroAccel"),
-  heroPga: document.querySelector("#heroPga"),
-  canvas: document.querySelector("#waveCanvas"),
-};
+    // =========================
+    // Report sections from HF version
+    // =========================
+    const REPORT_SECTIONS = {
+      "報告總覽": `
+        <div class="info-card">
+          <h2>🌋 地震學期末總報告｜互動式總覽</h2>
+          <p>本互動式報告將地震學課程內容、微型地震儀展示、黑森林震測實驗與國家地震工程研究中心參訪統整在同一個網頁中。主題可以概括為 <strong>「地球的重低音」</strong>：地震波就像地球內部活動發出的訊號，而地震學的任務就是從這些訊號反推震源、地下構造與地表反應。</p>
+          <div class="cards three">
+            <div class="mini-card"><h3>📍 震源 Source</h3><p>關注斷層如何破裂、能量如何釋放，以及地震發生時的物理過程。</p></div>
+            <div class="mini-card"><h3>🌐 路徑 Medium</h3><p>地震波穿越不同岩石、溫度、密度與流體含量的地下介質，速度與振幅都會改變。</p></div>
+            <div class="mini-card"><h3>📡 接收器 Receiver</h3><p>地震儀紀錄時間、振幅、頻率與方向，是反推震源與地下結構的主要資料。</p></div>
+          </div>
+        </div>
+      `,
+      "地震學核心概念": `
+        <div class="info-card">
+          <h2>01｜地震學核心概念</h2>
+          <p>地震學的基礎是從地表地震紀錄反推地下震源與介質。地震波雖然看似複雜，但可以透過走時、振幅與頻率進行拆解。</p>
+          <div class="cards two">
+            <div class="mini-card"><h3>走時曲線</h3><p>P 波速度較快，會比 S 波先到達測站。地震預警系統就是利用 P 波先到、S 波後到的時間差，爭取幾秒至十幾秒反應時間。</p></div>
+            <div class="mini-card"><h3>振幅衰減</h3><p>地震波振幅會隨距離增加而減小，主要原因包含幾何擴散與岩石內部摩擦造成的內在衰減。</p></div>
+            <div class="mini-card"><h3>時域與頻域</h3><p>時域波形顯示地表隨時間變化的震動；頻域分析則能看出哪些頻率成分較強，對建築共振判斷很重要。</p></div>
+            <div class="mini-card"><h3>彈性回跳理論</h3><p>地殼在板塊運動下累積彈性應變能，當應力超過斷層摩擦強度時，斷層突然錯動並釋放能量形成地震波。</p></div>
+          </div>
+        </div>
+      `,
+      "震源機制球與堪察加案例": `
+        <div class="info-card">
+          <h2>02｜震源機制球與堪察加半島強震</h2>
+          <p>震源機制球又稱「沙灘球」，用來表示斷層破裂型態。它根據 P 波初動的推、拉分布，以黑白象限呈現斷層運動方向。真正斷層面與輔助面通常需要結合板塊背景與震源參數判斷。</p>
+          <div class="cards two">
+            <div class="mini-card"><h3>堪察加半島強震參數</h3><ul><li>地震規模：約 M 8.8</li><li>震源深度：約 21.5 km</li><li>P 軸方位角：約 139°</li><li>構造背景：隱沒帶擠壓環境</li></ul></div>
+            <div class="mini-card"><h3>NP1 與 NP2 判讀</h3><ul><li>NP1：走向 198°、傾角 18°、滑移角 51°</li><li>NP2：走向 58°、傾角 76°、滑移角 101°</li><li>因隱沒帶板塊界面通常較低傾角，NP1 較可能是真正斷層面。</li></ul></div>
+          </div>
+          <div class="note"><strong>判讀重點：</strong>震源機制球不是只看黑白圖案，而是要比較節面幾何、板塊背景、震源深度與應力方向。</div>
+        </div>
+      `,
+      "地震危害、風險與防災": `
+        <div class="info-card">
+          <h2>03｜地震危害、風險與防災</h2>
+          <p>地震危害是自然條件造成的搖晃可能性；地震風險則是地震可能造成的實際損失。風險除了取決於地震本身，也與人口、建築、社會脆弱度有關。</p>
+          <div class="cards three">
+            <div class="mini-card"><h3>地震危害 Hazard</h3><p>某地發生一定程度地震搖晃的可能性，受斷層活動、震源距離與地盤條件影響。</p></div>
+            <div class="mini-card"><h3>曝險 Exposure</h3><p>人口、建築物、道路、橋梁、醫院等資產暴露在地震影響範圍內的程度。</p></div>
+            <div class="mini-card"><h3>脆弱度 Vulnerability</h3><p>建築物與社會系統承受地震衝擊的能力。脆弱度越高，災損越嚴重。</p></div>
+          </div>
+          <div class="note"><strong>地震風險概念式：</strong>Risk = Hazard × Exposure × Vulnerability。</div>
+        </div>
+      `,
+      "黑森林震測實驗": `
+        <div class="info-card">
+          <h2>04｜黑森林震測實驗</h2>
+          <p>黑森林震測實驗將地震學理論轉化為實際觀測。透過親自架設微震紀錄器、挖土安放儀器、校正水平與方向，能更具體理解地震資料從哪裡來。</p>
+          <div class="cards two">
+            <div class="mini-card"><h3>野外架設流程</h3><ul><li>挖土安放：選擇位置並挖掘土坑</li><li>水平校正：確認氣泡位於中心</li><li>指北定位：儀器正面朝北</li><li>磁吸啟動：減少按鍵耗損與防水風險</li><li>填土掩埋：讓儀器穩定記錄微震</li></ul></div>
+            <div class="mini-card"><h3>資料分析結果</h3><ul><li>以 SAC 格式儲存資料</li><li>使用 ObsPy Stream 進行分析</li><li>選取第 3 至 30 分鐘作為核心區段</li><li>產出 8 個地震事件或震動紀錄時頻特徵</li><li>約每 200 秒出現 40 Hz 高能量亮點，可能與人造干擾有關</li></ul></div>
+          </div>
+        </div>
+      `,
+      "國震中心參訪": `
+        <div class="info-card">
+          <h2>05｜國家地震工程研究中心參訪</h2>
+          <p>國震中心參訪將課堂中的共振、韌性、隔震與消能概念具體化，展現地震工程如何把科學轉化成保護生命與財產的技術。</p>
+          <div class="cards three">
+            <div class="mini-card"><h3>地震模擬振動台</h3><p>約 5m × 5m，可模擬不同強震波，用於測試實體結構在地震下的反應。</p></div>
+            <div class="mini-card"><h3>MATS 多軸強迫位移系統</h3><p>提供精準多軸高載重剪力與軸力測試，用於大型構件與工程系統評估。</p></div>
+            <div class="mini-card"><h3>BATS 雙軸高速動態系統</h3><p>可測試高性能消能元件與防震零件在高頻動態環境下的行為。</p></div>
+          </div>
+          <div class="note"><strong>工程重點：</strong>耐震不是讓建築完全不動，而是讓建築具有韌性、能耗能、能變形但不立即倒塌。</div>
+        </div>
+      `,
+      "結論與學習心得": `
+        <div class="info-card">
+          <h2>06｜結論與學習心得</h2>
+          <p>本報告將地震學課程內容、互動式網頁設計、野外震測實驗與國震中心參訪整合為完整學習紀錄。從理論面來看，地震學的核心在於透過地震波認識震源、地下介質與地表反應。</p>
+          <p>從應用面來看，地震學不只服務於學術研究，也與地震預警、災害風險評估、核試爆監測與建築耐震設計密切相關。</p>
+          <div class="note"><strong>總結：</strong>我們雖然無法阻止地震發生，但可以透過科學觀測、工程設計與風險管理，讓社會在地震面前更加安全。</div>
+        </div>
+      `
+    };
 
-let maxPga = 0;
-let tick = 0;
-const wave = {
-  x: Array(120).fill(0),
-  y: Array(120).fill(0),
-  z: Array(120).fill(1),
-  t: Array(120).fill(1)
-};
+    // =========================
+    // Tabs
+    // =========================
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
+    });
 
-function clampThresholds() {
-  let l1 = Number(els.l1.value);
-  let l2 = Number(els.l2.value);
-  let l3 = Number(els.l3.value);
+    const reportSelect = document.getElementById("reportSelect");
+    Object.keys(REPORT_SECTIONS).forEach(key => {
+      const opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = key;
+      reportSelect.appendChild(opt);
+    });
+    reportSelect.addEventListener("change", () => {
+      document.getElementById("reportOutput").innerHTML = REPORT_SECTIONS[reportSelect.value];
+    });
+    document.getElementById("reportOutput").innerHTML = REPORT_SECTIONS["報告總覽"];
 
-  if (l2 < l1 + 0.05) {
-    l2 = l1 + 0.05;
-    els.l2.value = l2.toFixed(2);
-  }
+    // =========================
+    // Fault SVG
+    // =========================
+    const faultMode = document.getElementById("faultMode");
 
-  if (l3 < l2 + 0.05) {
-    l3 = l2 + 0.05;
-    els.l3.value = l3.toFixed(2);
-  }
+    function makeFaultSvg(mode) {
+      if (mode === "normal") {
+        return `
+        <div class="info-card">
+          <h3>正斷層 Normal Fault</h3>
+          <p>拉張環境下，上盤相對下降，常見於張裂或伸張構造。</p>
+          <div class="svg-box">
+          <svg viewBox="0 0 900 420" width="100%" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="900" height="420" rx="24" fill="rgba(5,10,18,0.86)" />
+            <line x1="120" y1="320" x2="780" y2="95" stroke="rgba(255,255,255,0.72)" stroke-width="5" />
+            <polygon points="148,145 498,25 808,95 148,320" fill="rgba(88,212,255,0.16)" stroke="#7de3ff" stroke-width="3" />
+            <polygon points="110,320 770,95 770,320" fill="rgba(255,255,255,0.075)" stroke="rgba(255,255,255,0.38)" stroke-width="3" />
+            <text x="145" y="80" fill="#7de3ff" font-size="34" font-weight="900">←</text>
+            <text x="700" y="360" fill="#7de3ff" font-size="34" font-weight="900">→</text>
+            <text x="350" y="390" fill="rgba(244,248,255,0.86)" font-size="22">斷層面 Fault Plane</text>
+            <text x="315" y="160" fill="rgba(244,248,255,0.86)" font-size="22">上盤</text>
+            <text x="590" y="275" fill="rgba(244,248,255,0.86)" font-size="22">下盤</text>
+          </svg>
+          </div>
+        </div>`;
+      }
 
-  return { l1, l2, l3 };
-}
+      if (mode === "reverse") {
+        return `
+        <div class="info-card">
+          <h3>逆斷層 Reverse / Thrust Fault</h3>
+          <p>擠壓環境下，上盤相對上升，常見於隱沒帶與造山帶。</p>
+          <div class="svg-box">
+          <svg viewBox="0 0 900 420" width="100%" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="900" height="420" rx="24" fill="rgba(5,10,18,0.86)" />
+            <line x1="120" y1="320" x2="780" y2="95" stroke="rgba(255,255,255,0.72)" stroke-width="5" />
+            <polygon points="95,145 445,25 755,95 95,320" fill="rgba(255,186,122,0.18)" stroke="#ffba7a" stroke-width="3" />
+            <polygon points="134,320 794,95 794,320" fill="rgba(255,255,255,0.075)" stroke="rgba(255,255,255,0.38)" stroke-width="3" />
+            <text x="145" y="80" fill="#ffba7a" font-size="34" font-weight="900">→</text>
+            <text x="700" y="360" fill="#ffba7a" font-size="34" font-weight="900">←</text>
+            <text x="350" y="390" fill="rgba(244,248,255,0.86)" font-size="22">斷層面 Fault Plane</text>
+            <text x="315" y="160" fill="rgba(244,248,255,0.86)" font-size="22">上盤</text>
+            <text x="590" y="275" fill="rgba(244,248,255,0.86)" font-size="22">下盤</text>
+          </svg>
+          </div>
+        </div>`;
+      }
 
-function getState() {
-  const x = Number(els.x.value);
-  const y = Number(els.y.value);
-  const z = Number(els.z.value);
-  const raw = Math.sqrt(x * x + y * y + z * z);
-  const corrected = Math.abs(raw - 1);
-  const useCorrected = els.gravityCorrection.checked;
-  const measured = useCorrected ? corrected : raw;
-  const thresholds = clampThresholds();
+      return `
+        <div class="info-card">
+          <h3>平移斷層 Strike-slip Fault（右移示意）</h3>
+          <p>平移斷層以<strong>水平剪切</strong>為主，斷層面通常接近直立，因此最適合用<strong>俯視圖</strong>表示。這裡示範的是<strong>右移平移斷層</strong>。</p>
+          <div class="svg-box">
+          <svg viewBox="0 0 900 460" width="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="ssArrowBlue2" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 Z" fill="#7de3ff" /></marker>
+              <marker id="ssArrowPink2" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 Z" fill="#ff8fa0" /></marker>
+            </defs>
+            <rect x="0" y="0" width="900" height="460" rx="24" fill="rgba(5,10,18,0.86)" />
+            <rect x="100" y="80" width="700" height="260" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.18)" />
+            <rect x="100" y="80" width="335" height="260" fill="rgba(125,227,255,0.11)" />
+            <rect x="465" y="80" width="335" height="260" fill="rgba(255,143,160,0.10)" />
+            <rect x="435" y="80" width="30" height="260" fill="rgba(201,182,255,0.20)" />
+            <line x1="450" y1="68" x2="450" y2="352" stroke="#c9b6ff" stroke-width="5" stroke-dasharray="10,10" />
+            <text x="365" y="62" fill="#c9b6ff" font-size="21" font-weight="800">斷層跡 Fault Trace</text>
 
-  let level = 0;
-  let title = "L0 安全";
-  let message = "目前未達警報門檻。拖曳三軸滑桿觀察警報如何變化。";
-  let buzzer = "蜂鳴器關閉";
-  let icon = "🔇";
+            <polyline points="170,135 270,165 360,195 430,215" fill="none" stroke="#ffe082" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+            <polyline points="470,285 540,310 630,345 730,375" fill="none" stroke="#ffe082" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+            <text x="115" y="122" fill="#ffe082" font-size="19" font-weight="700">被右移斷層錯移的地表線</text>
 
-  if (measured >= thresholds.l3) {
-    level = 3;
-    title = "L3 強烈有感";
-    message = "🔴 三級警報：快速爆閃、高頻警報，Discord 可發布事件訊息。";
-    buzzer = "高頻空襲警報式";
-    icon = "🚨";
-  } else if (measured >= thresholds.l2) {
-    level = 2;
-    title = "L2 中度有感";
-    message = "🟠 二級警報：中速閃爍，蜂鳴器雙音頻交替。";
-    buzzer = "雙音頻交替";
-    icon = "📣";
-  } else if (measured >= thresholds.l1) {
-    level = 1;
-    title = "L1 輕微有感";
-    message = "🟡 一級警報：呼吸燈與低頻提示音。注意：若未校正，靜止時的 1g 重力也可能觸發。";
-    buzzer = "低頻提示音";
-    icon = "🔔";
-  }
+            <line x1="240" y1="315" x2="240" y2="110" stroke="#7de3ff" stroke-width="8" marker-end="url(#ssArrowBlue2)" />
+            <line x1="660" y1="105" x2="660" y2="315" stroke="#ff8fa0" stroke-width="8" marker-end="url(#ssArrowPink2)" />
 
-  return { x, y, z, raw, corrected, measured, useCorrected, level, title, message, buzzer, icon, thresholds };
-}
+            <rect x="118" y="300" width="238" height="32" rx="12" fill="rgba(5,10,18,0.74)" stroke="rgba(125,227,255,0.38)" />
+            <text x="133" y="322" fill="#7de3ff" font-size="18" font-weight="800">西側地塊向北移動</text>
 
-function render() {
-  const s = getState();
-  maxPga = Math.max(maxPga, s.measured);
+            <rect x="535" y="88" width="238" height="32" rx="12" fill="rgba(5,10,18,0.74)" stroke="rgba(255,143,160,0.38)" />
+            <text x="550" y="110" fill="#ff8fa0" font-size="18" font-weight="800">東側地塊向南移動</text>
 
-  els.xVal.textContent = s.x.toFixed(2);
-  els.yVal.textContent = s.y.toFixed(2);
-  els.zVal.textContent = s.z.toFixed(2);
-  els.l1Val.textContent = Number(els.l1.value).toFixed(2);
-  els.l2Val.textContent = Number(els.l2.value).toFixed(2);
-  els.l3Val.textContent = Number(els.l3.value).toFixed(2);
+            <rect x="100" y="395" width="330" height="42" rx="14" fill="rgba(125,227,255,0.10)" stroke="rgba(125,227,255,0.32)" />
+            <text x="118" y="422" fill="rgba(244,248,255,0.90)" font-size="17">站在西側往東看，東側看起來往右移</text>
 
-  els.levelBadge.textContent = s.title;
-  els.mainAccel.textContent = s.measured.toFixed(2);
-  els.measureLabel.textContent = s.useCorrected ? "目前使用：簡易重力校正後震動量" : "目前使用：原始合成加速度";
-  els.energyBar.style.width = `${Math.min((s.measured / 3.5) * 100, 100)}%`;
-  els.buzzerBox.querySelector("span").textContent = s.icon;
-  els.buzzerText.textContent = s.buzzer;
-  els.alertText.textContent = s.message;
+            <rect x="470" y="395" width="330" height="42" rx="14" fill="rgba(255,143,160,0.10)" stroke="rgba(255,143,160,0.32)" />
+            <text x="488" y="422" fill="rgba(244,248,255,0.90)" font-size="17">因此此例為右移平移斷層</text>
+          </svg>
+          </div>
+        </div>`;
+    }
 
-  document.body.classList.remove("level-0", "level-1", "level-2", "level-3");
-  document.body.classList.add(`level-${s.level}`);
+    faultMode.addEventListener("change", () => {
+      document.getElementById("faultOutput").innerHTML = makeFaultSvg(faultMode.value);
+    });
+    document.getElementById("faultOutput").innerHTML = makeFaultSvg("reverse");
 
-  const barLength = Math.min(Math.round(s.measured * 10), 35);
-  const bar = "█".repeat(barLength) + "░".repeat(35 - barLength);
-  els.terminalText.textContent =
-`[系統] ✅ MPU6050 硬體初始化成功。
+    // =========================
+    // Beachball simulator
+    // =========================
+    const strikeSlider = document.getElementById("strikeSlider");
+    const dipSlider = document.getElementById("dipSlider");
+    const rakeSlider = document.getElementById("rakeSlider");
+
+    function momentTensorNED(strike, dip, rake) {
+      const s = strike * Math.PI / 180;
+      const d = dip * Math.PI / 180;
+      const r = rake * Math.PI / 180;
+      const sin = Math.sin, cos = Math.cos;
+      const mnn = -sin(d) * cos(r) * sin(2 * s) - sin(2 * d) * sin(r) * (sin(s) ** 2);
+      const mee =  sin(d) * cos(r) * sin(2 * s) - sin(2 * d) * sin(r) * (cos(s) ** 2);
+      const mdd =  sin(2 * d) * sin(r);
+      const mne =  sin(d) * cos(r) * cos(2 * s) + 0.5 * sin(2 * d) * sin(r) * sin(2 * s);
+      const mnd = -cos(d) * cos(r) * cos(s) - cos(2 * d) * sin(r) * sin(s);
+      const med = -cos(d) * cos(r) * sin(s) + cos(2 * d) * sin(r) * cos(s);
+      return [[mnn, mne, mnd], [mne, mee, med], [mnd, med, mdd]];
+    }
+
+    function radiationValue(m, n, e, down) {
+      return n * (m[0][0] * n + m[0][1] * e + m[0][2] * down)
+           + e * (m[1][0] * n + m[1][1] * e + m[1][2] * down)
+           + down * (m[2][0] * n + m[2][1] * e + m[2][2] * down);
+    }
+
+    function faultTypeFromRake(rake) {
+      if (rake >= 45 && rake <= 135) return ["逆斷層／逆衝成分明顯", "#ffba7a", "Rake 介於 45° 到 135°，通常代表逆斷層或逆衝分量較強。"];
+      if (rake >= -135 && rake <= -45) return ["正斷層成分明顯", "#7de3ff", "Rake 介於 -135° 到 -45°，通常代表正斷層或張裂分量較強。"];
+      return ["平移斷層／剪切成分明顯", "#c9b6ff", "Rake 接近 0° 或 ±180° 時，通常代表平移斷層或水平剪切分量較強。"];
+    }
+
+    function makeBeachballSvg(strike, dip, rake) {
+      const m = momentTensorNED(strike, dip, rake);
+      const cx = 210, cy = 210, radius = 145;
+      const step = 7;
+      let cells = "";
+
+      for (let y = -radius; y <= radius; y += step) {
+        for (let x = -radius; x <= radius; x += step) {
+          const rho = Math.sqrt(x * x + y * y) / radius;
+          if (rho > 1) continue;
+
+          const az = Math.atan2(x, -y);
+          const takeoff = 2 * Math.asin(Math.min(1, rho / Math.sqrt(2)));
+          const n = Math.sin(takeoff) * Math.cos(az);
+          const e = Math.sin(takeoff) * Math.sin(az);
+          const down = Math.cos(takeoff);
+          const val = radiationValue(m, n, e, down);
+
+          const fill = val >= 0 ? "rgba(0,0,0,0.92)" : "white";
+          cells += `<rect x="${cx + x - step/2}" y="${cy + y - step/2}" width="${step+0.6}" height="${step+0.6}" fill="${fill}" />`;
+        }
+      }
+
+      const [type, color, note] = faultTypeFromRake(rake);
+      document.getElementById("beachballInfo").innerHTML = `
+        <h3 style="color:${color} !important;">${type}</h3>
+        <p>${note}</p>
+        <p>
+          <strong>Strike：</strong>${strike.toFixed(0)}°<br>
+          <strong>Dip：</strong>${dip.toFixed(0)}°<br>
+          <strong>Rake：</strong>${rake.toFixed(0)}°
+        </p>
+        <div class="note">
+          <strong>說明：</strong>這個 GitHub 版使用 JavaScript 依 Strike / Dip / Rake 建立雙偶力矩張量，並在下半球投影上重新繪製黑白分布。雖然是瀏覽器版簡化圖，但已會跟著三個參數即時改變。
+        </div>
+      `;
+
+      return `
+        <svg viewBox="0 0 420 420" width="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs><clipPath id="ballClip"><circle cx="${cx}" cy="${cy}" r="${radius}" /></clipPath></defs>
+          <rect x="0" y="0" width="420" height="420" rx="24" fill="rgba(5,10,18,0.86)" />
+          <g clip-path="url(#ballClip)">${cells}</g>
+          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="rgba(244,248,255,0.95)" stroke-width="4" />
+          <text x="36" y="36" fill="rgba(244,248,255,0.90)" font-size="17">Strike ${strike.toFixed(0)}°</text>
+          <text x="36" y="62" fill="rgba(244,248,255,0.90)" font-size="17">Dip ${dip.toFixed(0)}°</text>
+          <text x="36" y="88" fill="rgba(244,248,255,0.90)" font-size="17">Rake ${rake.toFixed(0)}°</text>
+        </svg>
+      `;
+    }
+
+    function renderBeachball() {
+      const strike = Number(strikeSlider.value);
+      const dip = Number(dipSlider.value);
+      const rake = Number(rakeSlider.value);
+      document.getElementById("strikeVal").textContent = strike.toFixed(0);
+      document.getElementById("dipVal").textContent = dip.toFixed(0);
+      document.getElementById("rakeVal").textContent = rake.toFixed(0);
+      document.getElementById("beachballSvg").innerHTML = makeBeachballSvg(strike, dip, rake);
+    }
+
+    [strikeSlider, dipSlider, rakeSlider].forEach(el => el.addEventListener("input", renderBeachball));
+    renderBeachball();
+
+    // =========================
+    // Risk calculator
+    // =========================
+    const hazardSlider = document.getElementById("hazardSlider");
+    const exposureSlider = document.getElementById("exposureSlider");
+    const vulnerabilitySlider = document.getElementById("vulnerabilitySlider");
+
+    function renderRisk() {
+      const hazard = Number(hazardSlider.value);
+      const exposure = Number(exposureSlider.value);
+      const vulnerability = Number(vulnerabilitySlider.value);
+      const risk = hazard * exposure * vulnerability;
+
+      let level, color, advice;
+      if (risk < 20) {
+        level = "低風險"; color = "#74ffba"; advice = "目前整體風險較低，但仍需維持基本防災準備與定期檢查。";
+      } else if (risk < 80) {
+        level = "中風險"; color = "#ffe28a"; advice = "已有明顯風險，建議強化避難規劃、家具固定與建築安全檢查。";
+      } else if (risk < 180) {
+        level = "高風險"; color = "#ffba7a"; advice = "風險偏高，應優先檢查老舊建物、軟弱層與重要設施耐震能力。";
+      } else {
+        level = "極高風險"; color = "#ff8fa0"; advice = "風險非常高，需進行建築補強、土地使用檢討與防災教育整備。";
+      }
+
+      document.getElementById("hazardVal").textContent = hazard.toFixed(1);
+      document.getElementById("exposureVal").textContent = exposure.toFixed(1);
+      document.getElementById("vulnerabilityVal").textContent = vulnerability.toFixed(1);
+
+      document.getElementById("riskOutput").innerHTML = `
+        <div class="panel output-panel">
+          <div class="level-badge" style="color:${color}; border-color:${color}; background:rgba(255,255,255,0.08);">${level}</div>
+          <div class="risk-number">${risk.toFixed(1)}</div>
+          <div class="measure-label">Risk = Hazard × Exposure × Vulnerability</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(risk / 250 * 100, 100).toFixed(1)}%;"></div></div>
+          <p class="measure-label">Hazard = ${hazard.toFixed(1)} ｜ Exposure = ${exposure.toFixed(1)} ｜ Vulnerability = ${vulnerability.toFixed(1)}</p>
+          <div class="note"><strong>建議：</strong>${advice}</div>
+        </div>
+      `;
+    }
+
+    [hazardSlider, exposureSlider, vulnerabilitySlider].forEach(el => el.addEventListener("input", renderRisk));
+    renderRisk();
+
+    // =========================
+    // Seismometer simulator
+    // =========================
+    const els = {
+      x: document.querySelector("#xAxis"),
+      y: document.querySelector("#yAxis"),
+      z: document.querySelector("#zAxis"),
+      xVal: document.querySelector("#xVal"),
+      yVal: document.querySelector("#yVal"),
+      zVal: document.querySelector("#zVal"),
+      l1: document.querySelector("#l1"),
+      l2: document.querySelector("#l2"),
+      l3: document.querySelector("#l3"),
+      l1Val: document.querySelector("#l1Val"),
+      l2Val: document.querySelector("#l2Val"),
+      l3Val: document.querySelector("#l3Val"),
+      gravityCorrection: document.querySelector("#gravityCorrection"),
+      randomShake: document.querySelector("#randomShake"),
+      levelBadge: document.querySelector("#levelBadge"),
+      mainAccel: document.querySelector("#mainAccel"),
+      measureLabel: document.querySelector("#measureLabel"),
+      energyBar: document.querySelector("#energyBar"),
+      buzzerText: document.querySelector("#buzzerText"),
+      buzzerBox: document.querySelector("#buzzerBox"),
+      alertText: document.querySelector("#alertText"),
+      terminalText: document.querySelector("#terminalText"),
+      heroLevel: document.querySelector("#heroLevel"),
+      heroAccel: document.querySelector("#heroAccel"),
+      heroPga: document.querySelector("#heroPga"),
+      canvas: document.querySelector("#waveCanvas"),
+    };
+
+    let maxPga = 0;
+    let tick = 0;
+    const wave = {
+      x: Array(120).fill(0),
+      y: Array(120).fill(0),
+      z: Array(120).fill(1),
+      t: Array(120).fill(1)
+    };
+
+    function clampThresholds() {
+      let l1 = Number(els.l1.value);
+      let l2 = Number(els.l2.value);
+      let l3 = Number(els.l3.value);
+      if (l2 < l1 + 0.05) { l2 = l1 + 0.05; els.l2.value = l2.toFixed(2); }
+      if (l3 < l2 + 0.05) { l3 = l2 + 0.05; els.l3.value = l3.toFixed(2); }
+      return { l1, l2, l3 };
+    }
+
+    function getState() {
+      const x = Number(els.x.value);
+      const y = Number(els.y.value);
+      const z = Number(els.z.value);
+      const raw = Math.sqrt(x * x + y * y + z * z);
+      const corrected = Math.abs(raw - 1);
+      const useCorrected = els.gravityCorrection.checked;
+      const measured = useCorrected ? corrected : raw;
+      const thresholds = clampThresholds();
+
+      let level = 0, title = "L0 安全", message = "目前未達警報門檻。拖曳三軸滑桿觀察警報如何變化。", buzzer = "蜂鳴器關閉", icon = "🔇";
+
+      if (measured >= thresholds.l3) {
+        level = 3; title = "L3 強烈有感"; message = "🔴 三級警報：快速爆閃、高頻警報，Discord 可發布事件訊息。"; buzzer = "高頻空襲警報式"; icon = "🚨";
+      } else if (measured >= thresholds.l2) {
+        level = 2; title = "L2 中度有感"; message = "🟠 二級警報：中速閃爍，蜂鳴器雙音頻交替。"; buzzer = "雙音頻交替"; icon = "📣";
+      } else if (measured >= thresholds.l1) {
+        level = 1; title = "L1 輕微有感"; message = "🟡 一級警報：呼吸燈與低頻提示音。注意：若未校正，靜止時的 1g 重力也可能觸發。"; buzzer = "低頻提示音"; icon = "🔔";
+      }
+
+      return { x, y, z, raw, corrected, measured, useCorrected, level, title, message, buzzer, icon, thresholds };
+    }
+
+    function render() {
+      const s = getState();
+      maxPga = Math.max(maxPga, s.measured);
+
+      els.xVal.textContent = s.x.toFixed(2);
+      els.yVal.textContent = s.y.toFixed(2);
+      els.zVal.textContent = s.z.toFixed(2);
+      els.l1Val.textContent = Number(els.l1.value).toFixed(2);
+      els.l2Val.textContent = Number(els.l2.value).toFixed(2);
+      els.l3Val.textContent = Number(els.l3.value).toFixed(2);
+
+      els.levelBadge.textContent = s.title;
+      els.mainAccel.textContent = s.measured.toFixed(2);
+      els.measureLabel.textContent = s.useCorrected ? "目前使用：簡易重力校正後震動量" : "目前使用：原始合成加速度";
+      els.energyBar.style.width = `${Math.min((s.measured / 3.5) * 100, 100)}%`;
+      els.buzzerBox.querySelector("span").textContent = s.icon;
+      els.buzzerText.textContent = s.buzzer;
+      els.alertText.textContent = s.message;
+
+      document.body.classList.remove("level-0", "level-1", "level-2", "level-3");
+      document.body.classList.add(`level-${s.level}`);
+
+      const barLength = Math.min(Math.round(s.measured * 10), 35);
+      const bar = "█".repeat(barLength) + "░".repeat(35 - barLength);
+      els.terminalText.textContent =
+`[系統] ✅ GitHub Pages 靜態版已載入。
 X=${s.x.toFixed(2)}g, Y=${s.y.toFixed(2)}g, Z=${s.z.toFixed(2)}g
 [${bar}] 即時震度: ${s.measured.toFixed(2)}g (L${s.level})
 🏆 最高 PGA 紀錄: ${maxPga.toFixed(2)} g`;
 
-  els.heroLevel.textContent = `L${s.level}`;
-  els.heroAccel.textContent = `${s.measured.toFixed(2)} g`;
-  els.heroPga.textContent = `${maxPga.toFixed(2)} g`;
-}
+      els.heroLevel.textContent = `L${s.level}`;
+      els.heroAccel.textContent = `${s.measured.toFixed(2)} g`;
+      els.heroPga.textContent = `${maxPga.toFixed(2)} g`;
+    }
 
-function pushWave() {
-  const s = getState();
-  wave.x.push(s.x);
-  wave.y.push(s.y);
-  wave.z.push(s.z);
-  wave.t.push(s.measured);
-  Object.keys(wave).forEach(k => {
-    if (wave[k].length > 120) wave[k].shift();
-  });
-}
+    function pushWave() {
+      const s = getState();
+      wave.x.push(s.x); wave.y.push(s.y); wave.z.push(s.z); wave.t.push(s.measured);
+      Object.keys(wave).forEach(k => { if (wave[k].length > 120) wave[k].shift(); });
+    }
 
-function drawWave() {
-  const canvas = els.canvas;
-  const ctx = canvas.getContext("2d");
-  const w = canvas.width;
-  const h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
+    function drawWave() {
+      const canvas = els.canvas;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "rgba(5, 10, 18, 0.85)";
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = "rgba(255,255,255,0.10)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 8; i++) {
+        const y = (h / 8) * i;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      const drawLine = (arr, color, scale = 3, offset = 0) => {
+        ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath();
+        arr.forEach((v, i) => {
+          const x = (w / (arr.length - 1)) * i;
+          const y = h / 2 - ((v - offset) / scale) * (h * 0.42);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      };
+      drawLine(wave.x, "#ff5c70", 3, 0);
+      drawLine(wave.y, "#ffd45c", 3, 0);
+      drawLine(wave.z, "#58d4ff", 3, 0);
+      drawLine(wave.t, "#b99cff", 3, 0);
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.font = "20px system-ui";
+      ctx.fillText("三軸加速度與警報判斷值", 24, 34);
+    }
 
-  ctx.fillStyle = "rgba(5, 10, 18, 0.85)";
-  ctx.fillRect(0, 0, w, h);
+    function randomShake() {
+      const magnitude = 0.4 + Math.random() * 2.4;
+      const angle = Math.random() * Math.PI * 2;
+      const vertical = (Math.random() - 0.5) * 1.6;
+      els.x.value = (Math.cos(angle) * magnitude).toFixed(2);
+      els.y.value = (Math.sin(angle) * magnitude).toFixed(2);
+      els.z.value = (1 + vertical).toFixed(2);
+      render(); pushWave(); drawWave();
+    }
 
-  ctx.strokeStyle = "rgba(255,255,255,0.10)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 8; i++) {
-    const y = (h / 8) * i;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
-  }
-
-  const drawLine = (arr, color, scale = 3, offset = 0) => {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    arr.forEach((v, i) => {
-      const x = (w / (arr.length - 1)) * i;
-      const y = h / 2 - ((v - offset) / scale) * (h * 0.42);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+    [els.x, els.y, els.z, els.l1, els.l2, els.l3, els.gravityCorrection].forEach(el => {
+      el.addEventListener("input", () => { render(); pushWave(); drawWave(); });
     });
-    ctx.stroke();
-  };
+    els.randomShake.addEventListener("click", randomShake);
 
-  drawLine(wave.x, "#ff5c70", 3, 0);
-  drawLine(wave.y, "#ffd45c", 3, 0);
-  drawLine(wave.z, "#58d4ff", 3, 0);
-  drawLine(wave.t, "#b99cff", 3, 0);
+    setInterval(() => {
+      tick += 1;
+      const s = getState();
+      if (s.level > 0) {
+        const jitter = 0.02 * Math.sin(tick / 2);
+        wave.x.push(s.x + jitter);
+        wave.y.push(s.y - jitter);
+        wave.z.push(s.z + jitter * 0.5);
+        wave.t.push(Math.max(0, s.measured + jitter));
+      } else {
+        wave.x.push(s.x); wave.y.push(s.y); wave.z.push(s.z); wave.t.push(s.measured);
+      }
+      Object.keys(wave).forEach(k => { if (wave[k].length > 120) wave[k].shift(); });
+      render(); drawWave();
+    }, 200);
 
-  ctx.fillStyle = "rgba(255,255,255,0.45)";
-  ctx.font = "20px system-ui";
-  ctx.fillText("三軸加速度與警報判斷值", 24, 34);
-}
-
-function randomShake() {
-  const magnitude = 0.4 + Math.random() * 2.4;
-  const angle = Math.random() * Math.PI * 2;
-  const vertical = (Math.random() - 0.5) * 1.6;
-  els.x.value = (Math.cos(angle) * magnitude).toFixed(2);
-  els.y.value = (Math.sin(angle) * magnitude).toFixed(2);
-  els.z.value = (1 + vertical).toFixed(2);
-  render();
-  pushWave();
-  drawWave();
-}
-
-[els.x, els.y, els.z, els.l1, els.l2, els.l3, els.gravityCorrection].forEach(el => {
-  el.addEventListener("input", () => {
     render();
-    pushWave();
     drawWave();
-  });
-});
-
-els.randomShake.addEventListener("click", randomShake);
-
-setInterval(() => {
-  tick += 1;
-  const s = getState();
-
-  if (s.level > 0) {
-    const jitter = 0.02 * Math.sin(tick / 2);
-    wave.x.push(s.x + jitter);
-    wave.y.push(s.y - jitter);
-    wave.z.push(s.z + jitter * 0.5);
-    wave.t.push(Math.max(0, s.measured + jitter));
-  } else {
-    wave.x.push(s.x);
-    wave.y.push(s.y);
-    wave.z.push(s.z);
-    wave.t.push(s.measured);
-  }
-
-  Object.keys(wave).forEach(k => {
-    if (wave[k].length > 120) wave[k].shift();
-  });
-
-  render();
-  drawWave();
-}, 200);
-
-render();
-drawWave();
-
   </script>
 </body>
 </html>
