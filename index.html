@@ -582,20 +582,20 @@
         <p>
           這個區塊用影片呈現簡易地震儀的實際操作情形。建議在 GitHub Pages 中使用
           <code>&lt;video controls&gt;</code> 直接嵌入 MP4 檔案，這樣老師或同學打開網頁時可以直接播放，
-          不需要另外下載影片。
+          不需要另外下載影片。本版已加入 poster 封面圖，並將影片重新封裝成瀏覽器較穩定的 fast-start MP4。
         </p>
       </div>
 
       <div class="glass" style="padding:1rem; overflow:hidden;">
-        <video controls preload="metadata" playsinline style="width:100%; border-radius:1rem; display:block; background:#050a12;">
-          <source src="assets/raspberry_pi_demo.mp4" type="video/mp4">
+        <video controls preload="metadata" playsinline poster="assets/raspberry_pi_demo_poster.jpg" style="width:100%; border-radius:1rem; display:block; background:#050a12;">
+          <source src="assets/raspberry_pi_demo_web.mp4" type="video/mp4">
           你的瀏覽器不支援影片播放。請改用下方連結開啟影片。
         </video>
 
         <div class="note">
           <strong>影片備用連結：</strong>
           如果影片沒有自動顯示，可以
-          <a href="assets/raspberry_pi_demo.mp4" target="_blank" rel="noopener" style="color:#9be7ff; font-weight:900;">
+          <a href="assets/raspberry_pi_demo_web.mp4" target="_blank" rel="noopener" style="color:#9be7ff; font-weight:900;">
             點此開啟影片檔
           </a>。
         </div>
