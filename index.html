@@ -476,8 +476,6 @@
 
       <div class="tabs" role="tablist">
         <button class="tab-btn active" data-tab="report-tab">📘 報告導覽</button>
-        <button class="tab-btn" data-tab="risk-tab">⚠️ 地震風險</button>
-        <button class="tab-btn" data-tab="sim-tab">📡 微型地震儀</button>
       </div>
 
       <div class="tab-panel active" id="report-tab">
@@ -492,31 +490,6 @@
             </div>
           </div>
           <div id="reportOutput"></div>
-        </div>
-      </div>
-
-      <div class="tab-panel" id="risk-tab">
-        <div class="risk-grid" id="risk-tab-content">
-          <div class="control-card">
-            <h3>地震風險互動計算器</h3>
-            <label for="hazardSlider">地震危害 Hazard：<strong id="hazardVal">6.0</strong></label>
-            <input id="hazardSlider" type="range" min="1" max="10" step="0.5" value="6">
-
-            <label for="exposureSlider">曝險程度 Exposure：<strong id="exposureVal">7.0</strong></label>
-            <input id="exposureSlider" type="range" min="1" max="10" step="0.5" value="7">
-
-            <label for="vulnerabilitySlider">脆弱度 Vulnerability：<strong id="vulnerabilityVal">6.0</strong></label>
-            <input id="vulnerabilitySlider" type="range" min="1" max="10" step="0.5" value="6">
-          </div>
-          <div id="riskOutput"></div>
-        </div>
-      </div>
-
-      <div class="tab-panel" id="sim-tab">
-        <div class="info-card">
-          <h3>微型地震儀互動模擬</h3>
-          <p>此分頁沿用原 GitHub 三軸加速度互動模擬，並保留 Hugging Face 版的報告脈絡與門檻設定說明。</p>
-          <a class="btn primary" href="#simulator">前往三軸加速度模擬器</a>
         </div>
       </div>
     </section>
@@ -1017,46 +990,6 @@
 // =========================
     // Risk calculator
     // =========================
-    const hazardSlider = document.getElementById("hazardSlider");
-    const exposureSlider = document.getElementById("exposureSlider");
-    const vulnerabilitySlider = document.getElementById("vulnerabilitySlider");
-
-    function renderRisk() {
-      const hazard = Number(hazardSlider.value);
-      const exposure = Number(exposureSlider.value);
-      const vulnerability = Number(vulnerabilitySlider.value);
-      const risk = hazard * exposure * vulnerability;
-
-      let level, color, advice;
-      if (risk < 20) {
-        level = "低風險"; color = "#74ffba"; advice = "目前整體風險較低，但仍需維持基本防災準備與定期檢查。";
-      } else if (risk < 80) {
-        level = "中風險"; color = "#ffe28a"; advice = "已有明顯風險，建議強化避難規劃、家具固定與建築安全檢查。";
-      } else if (risk < 180) {
-        level = "高風險"; color = "#ffba7a"; advice = "風險偏高，應優先檢查老舊建物、軟弱層與重要設施耐震能力。";
-      } else {
-        level = "極高風險"; color = "#ff8fa0"; advice = "風險非常高，需進行建築補強、土地使用檢討與防災教育整備。";
-      }
-
-      document.getElementById("hazardVal").textContent = hazard.toFixed(1);
-      document.getElementById("exposureVal").textContent = exposure.toFixed(1);
-      document.getElementById("vulnerabilityVal").textContent = vulnerability.toFixed(1);
-
-      document.getElementById("riskOutput").innerHTML = `
-        <div class="panel output-panel">
-          <div class="level-badge" style="color:${color}; border-color:${color}; background:rgba(255,255,255,0.08);">${level}</div>
-          <div class="risk-number">${risk.toFixed(1)}</div>
-          <div class="measure-label">Risk = Hazard × Exposure × Vulnerability</div>
-          <div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(risk / 250 * 100, 100).toFixed(1)}%;"></div></div>
-          <p class="measure-label">Hazard = ${hazard.toFixed(1)} ｜ Exposure = ${exposure.toFixed(1)} ｜ Vulnerability = ${vulnerability.toFixed(1)}</p>
-          <div class="note"><strong>建議：</strong>${advice}</div>
-        </div>
-      `;
-    }
-
-    [hazardSlider, exposureSlider, vulnerabilitySlider].forEach(el => el.addEventListener("input", renderRisk));
-    renderRisk();
-
 
     // =========================
     // Standalone fault + beachball section
